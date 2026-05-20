@@ -220,6 +220,11 @@ export default function App() {
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+      if (result.matches === '0') {
+        throw new Error(
+          'The server returned no applied replacements. Check find/replace text and match mode, then rebuild the backend (mvn package or docker compose up --build).',
+        );
+      }
       addLog(
         `Done. ${result.matches} replacement(s) applied from ${result.matchesFound} match(es). Style-preserved: ${result.stylePreserved}, fallback-font: ${result.styleFallback}.`,
         'success',

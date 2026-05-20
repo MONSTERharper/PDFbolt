@@ -587,6 +587,15 @@ public final class DeterministicPdfReplacer {
             return applyRunReconstruction(rewriteRun, matchStart, matchEnd, replacement, substituteFont, preserveStyle);
         }
 
+        if (shouldCollapseSplitOperatorMatch(affected, matchStart, matchEnd)) {
+            int changed = applyRunReconstruction(affected, matchStart, matchEnd, replacement, substituteFont, preserveStyle);
+            neutralizeSupplementaryShowTextOperators(affected);
+            if (!preserveStyle) {
+                zeroInternalArraySpacing(affected);
+            }
+            return changed;
+        }
+
         String matchedOriginal = matchedSubstring(affected, matchStart, matchEnd);
 
         TextSegment first = affected.get(0);
@@ -1114,6 +1123,66 @@ public final class DeterministicPdfReplacer {
         }
 
         return false;
+    }
+
+    /**
+     * Some PDFs split one logical word across a standalone {@code Tj} and a following {@code TJ} at a new
+     * absolute position. The default flexible path puts the full replacement only in the first segment.
+     */
+    private static boolean shouldCollapseSplitOperatorMatch(List<TextSegment> affected, int matchStart, int matchEnd) {
+        if (affected.size() < 2) {
+            return false;
+        }
+        TextSegment first = affected.get(0);
+        TextSegment last = affected.get(affected.size() - 1);
+        if (matchStart != first.start || matchEnd != last.end) {
+            return false;
+        }
+        long distinctOperators = affected.stream().mapToInt(segment -> segment.operatorIndex).distinct().count();
+        if (distinctOperators < 2) {
+            return false;
+        }
+        float baselineY = first.y;
+        for (TextSegment segment : affected) {
+            if (Math.abs(segment.y - baselineY) > 0.5f) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Drop leftover kern strings from secondary {@code TJ} blocks after collapsing a split-operator match. */
+    private static void neutralizeSupplementaryShowTextOperators(List<TextSegment> affected) {
+        if (affected.size() < 2) {
+            return;
+        }
+        Set<Integer> seenOperators = new HashSet<>();
+        boolean firstOperator = true;
+        for (TextSegment segment : affected) {
+            if (!seenOperators.add(segment.operatorIndex)) {
+                continue;
+            }
+            if (firstOperator) {
+                firstOperator = false;
+                continue;
+            }
+            if (segment.parentArray != null) {
+                segment.parentArray.clear();
+            }
+        }
+    }
+
+    private static int resolveShowTextOperatorIndex(List<Object> tokens, TextSegment segment) {
+        if (segment.parentArray != null) {
+            for (int i = 0; i + 1 < tokens.size(); i++) {
+                if (tokens.get(i) == segment.parentArray && tokens.get(i + 1) instanceof Operator op && "TJ".equals(op.getName())) {
+                    return i + 1;
+                }
+            }
+            return segment.operatorIndex;
+        }
+        int stringIndex = resolveStandaloneTjStringTokenIndex(tokens, segment);
+        return stringIndex >= 0 ? stringIndex + 1 : segment.operatorIndex;
     }
 
     private static boolean canUseDynamicArrayReplacement(List<TextSegment> affected, int matchStart, int matchEnd) {
@@ -1701,17 +1770,21 @@ public final class DeterministicPdfReplacer {
                 .sorted(Comparator.comparingInt((TextSegment segment) -> segment.operatorIndex).reversed())
                 .toList();
 
-        int lastOperatorIndex = -1;
+        Set<Integer> processedOperators = new HashSet<>();
         for (TextSegment segment : substituteSegments) {
-            if (segment.operatorIndex == lastOperatorIndex || segment.fontResourceName == null || segment.fontSize == null) {
+            int operatorIndex = resolveShowTextOperatorIndex(tokens, segment);
+            if (!processedOperators.add(operatorIndex)
+                    || segment.fontResourceName == null
+                    || segment.fontSize == null
+                    || operatorIndex < 0
+                    || operatorIndex >= tokens.size()
+                    || !(tokens.get(operatorIndex) instanceof Operator operator)) {
                 continue;
             }
-            lastOperatorIndex = segment.operatorIndex;
 
-            Operator operator = (Operator) tokens.get(segment.operatorIndex);
             int operandCount = "\"".equals(operator.getName()) ? 3 : 1;
-            int insertBefore = Math.max(0, segment.operatorIndex - operandCount);
-            int insertAfter = segment.operatorIndex + 1;
+            int insertBefore = Math.max(0, operatorIndex - operandCount);
+            int insertAfter = operatorIndex + 1;
 
             tokens.add(insertAfter, Operator.getOperator("Tf"));
             tokens.add(insertAfter, segment.fontSize);

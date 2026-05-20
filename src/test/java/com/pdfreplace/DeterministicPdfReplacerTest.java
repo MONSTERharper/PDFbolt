@@ -5,8 +5,10 @@ import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.pdfparser.PDFStreamParser;
 import org.apache.pdfbox.contentstream.operator.Operator;
+import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.cos.COSNumber;
 import org.apache.pdfbox.cos.COSString;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -274,6 +276,46 @@ class DeterministicPdfReplacerTest {
         Float restored = twRestoreOperandAfterShowText(output);
         assertNotNull(restored);
         assertEquals(priorTw, restored, 0.001f);
+    }
+
+    @Test
+    void replacesSplitTjAndTjArrayNameOnNeubergStylePdf() throws Exception {
+        File input = new File("src/test/resources/neuberg-sarvesh-sample.pdf");
+        Assumptions.assumeTrue(input.isFile(), "sample PDF missing");
+        File output = tempDir.resolve("neuberg-shikha-out.pdf").toFile();
+
+        DeterministicPdfReplacer.Result result = DeterministicPdfReplacer.replace(
+                input,
+                output,
+                "JOHN DOE",
+                "JANE DOE",
+                false,
+                null,
+                DeterministicPdfReplacer.MatchMode.EXACT,
+                DeterministicPdfReplacer.ReplaceScope.ALL,
+                null
+        );
+
+        assertEquals(1, result.matchesReplaced());
+        String text = extractText(output);
+        assertTrue(text.contains("JANE DOE"), () -> "output text: " + text);
+        assertFalse(text.contains("JOHN DOE"), () -> "output text: " + text);
+        assertTrue(hasSubstituteFontResource(output));
+    }
+
+    private static boolean hasSubstituteFontResource(File pdfFile) throws Exception {
+        List<Object> tokens = tokensFirstPage(pdfFile);
+        boolean sawSubstituteName = false;
+        boolean sawSubstituteTf = false;
+        for (int i = 0; i + 2 < tokens.size(); i++) {
+            if (tokens.get(i) instanceof COSName name && "FSubPdfReplace".equals(name.getName())) {
+                sawSubstituteName = true;
+                if (tokens.get(i + 2) instanceof Operator op && "Tf".equals(op.getName())) {
+                    sawSubstituteTf = true;
+                }
+            }
+        }
+        return sawSubstituteName && sawSubstituteTf;
     }
 
     @Test

@@ -54,7 +54,19 @@ export async function postReplaceBatch(params: {
     data.append('occurrenceIndex', String(params.occurrenceIndex));
   }
 
-  const response = await fetch('/api/replace', { method: 'POST', body: data });
+  let response: Response;
+  try {
+    response = await fetch('/api/replace', { method: 'POST', body: data });
+  } catch (err) {
+    const hint =
+      'Could not reach the PDF engine at /api/replace. ' +
+      'Start the Java backend on port 8080 (mvn spring-boot:run or docker compose up --build), ' +
+      'then use http://localhost:8080/replace or run "npm run dev" in new-ui/ (proxies /api to 8080).';
+    if (err instanceof TypeError) {
+      throw new Error(hint);
+    }
+    throw err;
+  }
   if (!response.ok) {
     let message = `Request failed with ${response.status}`;
     const contentType = response.headers.get('content-type') || '';

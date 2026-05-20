@@ -33,7 +33,23 @@ cp .env.example .env
 docker compose up --build
 ```
 
-The app listens on `http://localhost:8080` by default.
+The app listens on `http://localhost:8080` by default. Open `http://localhost:8080/replace` for the React UI.
+
+### Local frontend dev (optional)
+
+The UI in `new-ui/` proxies `/api` to `http://127.0.0.1:8080`. **Both** must run:
+
+```bash
+# terminal 1 — Java API + built UI at /app/
+mvn spring-boot:run
+
+# terminal 2 — hot-reload UI at http://localhost:3000/app/
+cd new-ui && npm install && npm run dev
+```
+
+If only `npm run dev` is running, replace requests fail because there is no PDF engine on port 3000.
+
+After changing Java replacement logic, restart Spring Boot or rebuild Docker (`docker compose up --build`).
 
 ## Run Replacement
 
