@@ -51,6 +51,23 @@ If only `npm run dev` is running, replace requests fail because there is no PDF 
 
 After changing Java replacement logic, restart Spring Boot or rebuild Docker (`docker compose up --build`).
 
+### EC2 / Docker production
+
+Garbled text like `Mr 6+,.+$ THAPA` means the container is still drawing substitute-encoded bytes with the original subset font (missing `/FSubPdfReplace … Tf` in the content stream, or an old image without the split-operator fix).
+
+On the server, rebuild and restart so the image includes the latest `DeterministicPdfReplacer` code and Linux fonts from the Dockerfile:
+
+```bash
+docker compose down
+docker compose build --no-cache
+docker compose up -d
+docker compose logs -f
+```
+
+After a replace, logs should show `Injected substitute font switch FSubPdfReplace before Tj operator at token …`. If you only see `Rewrote subset font segment` without that line, the running JAR is stale.
+
+Use a **single find rule** for the full name (e.g. `SARVESH THAPA` → `JOHN DOE`), not only `SARVESH`, so both split `Tj`/`TJ` blocks are collapsed.
+
 ## Run Replacement
 
 ```bash
