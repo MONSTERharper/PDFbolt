@@ -76,7 +76,8 @@ public class LibreOfficeConverter {
             throw new IllegalStateException(
                     "LibreOffice is not installed or not on PATH (soffice). "
                             + "Install on the server, e.g. Ubuntu/Debian: "
-                            + "sudo apt-get install -y libreoffice-writer libreoffice-core-nogui; "
+                            + "sudo apt-get install -y libreoffice-core-nogui libreoffice-writer-nogui "
+                            + "libreoffice-calc-nogui libreoffice-impress-nogui; "
                             + "Amazon Linux: sudo dnf install -y libreoffice-core libreoffice-writer. "
                             + "Or set boltreplacer.libreoffice.command to the full path of soffice.");
         }

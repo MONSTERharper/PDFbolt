@@ -33,10 +33,10 @@ RUN apt-get update \
     fonts-urw-base35 \
     fonts-freefont-ttf \
     fonts-open-sans \
-    libreoffice-writer \
-    libreoffice-calc \
-    libreoffice-impress \
     libreoffice-core-nogui \
+    libreoffice-writer-nogui \
+    libreoffice-calc-nogui \
+    libreoffice-impress-nogui \
     ghostscript \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /tmp/.config /tmp/.cache

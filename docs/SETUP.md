@@ -50,7 +50,7 @@ sudo apt-get update
 sudo apt-get install -y --no-install-recommends \
   openjdk-17-jre-headless maven \
   fontconfig fonts-dejavu-core fonts-liberation fonts-noto-core fonts-freefont-ttf \
-  libreoffice-writer libreoffice-calc libreoffice-impress libreoffice-core-nogui
+  libreoffice-core-nogui libreoffice-writer-nogui libreoffice-calc-nogui libreoffice-impress-nogui
 
 soffice --version
 java -version
