@@ -1,14 +1,42 @@
+# PDFbolt — LibreOffice, Ghostscript, fonts, and veraPDF (amd64) are baked into the image.
+#
+#   cp .env.example .env
+#   docker compose up --build -d
+#
+# Or manual build/run (same image):
+#   docker build -t pdfbolt:0.1.0 -t pdfbolt:latest .
+#   docker run -d --restart always --env-file .env -p 8080:8080 --name pdfbolt pdfbolt:latest
+
 services:
   boltreplacer:
     build: .
+    image: pdfbolt:latest
     ports:
       - "${PORT:-8080}:8080"
+    env_file:
+      - .env
     environment:
       PORT: "${PORT:-8080}"
-      SMTP_HOST: "${SMTP_HOST}"
+      JAVA_OPTS: "${JAVA_OPTS:--Xms128m -Xmx512m}"
+      HOME: /tmp
+      LIBREOFFICE_COMMAND: "${LIBREOFFICE_COMMAND:-soffice}"
+      LIBREOFFICE_TIMEOUT_SECONDS: "${LIBREOFFICE_TIMEOUT_SECONDS:-120}"
+      GHOSTSCRIPT_COMMAND: "${GHOSTSCRIPT_COMMAND:-gs}"
+      GHOSTSCRIPT_TIMEOUT_SECONDS: "${GHOSTSCRIPT_TIMEOUT_SECONDS:-120}"
+      VERAPDF_COMMAND: "${VERAPDF_COMMAND:-verapdf}"
+      PDFA_VALIDATE: "${PDFA_VALIDATE:-true}"
+      SMTP_HOST: "${SMTP_HOST:-}"
       SMTP_PORT: "${SMTP_PORT:-587}"
-      SMTP_USERNAME: "${SMTP_USERNAME}"
-      SMTP_PASSWORD: "${SMTP_PASSWORD}"
+      SMTP_USERNAME: "${SMTP_USERNAME:-}"
+      SMTP_PASSWORD: "${SMTP_PASSWORD:-}"
       SMTP_AUTH: "${SMTP_AUTH:-true}"
       SMTP_STARTTLS: "${SMTP_STARTTLS:-true}"
-      MAIL_FROM: "${MAIL_FROM}"
+      MAIL_FROM: "${MAIL_FROM:-no-reply@pdfbolt.local}"
+      CONTACT_LOG_ONLY: "${CONTACT_LOG_ONLY:-false}"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped

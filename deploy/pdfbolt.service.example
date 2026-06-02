@@ -1,0 +1,16 @@
+[Unit]
+Description=PDFbolt Suite (Spring Boot)
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/PDFbolt
+EnvironmentFile=/home/ubuntu/PDFbolt/.env
+Environment=HOME=/tmp
+ExecStart=/usr/bin/java -Xms128m -Xmx384m -jar /home/ubuntu/PDFbolt/target/bolt-replacer-1.1.0.jar
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

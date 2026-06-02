@@ -34,6 +34,8 @@ export async function postReplaceBatch(params: {
   strict: boolean;
   preserveStyle: boolean;
   retainMetadata: boolean;
+  pdfOpenPassword?: string;
+  pdfPasswordsJson?: string;
 }): Promise<ReplaceApiResult> {
   const data = new FormData();
   for (const file of params.files) {
@@ -48,6 +50,11 @@ export async function postReplaceBatch(params: {
   data.set('strict', params.strict ? 'true' : 'false');
   data.set('preserveStyle', params.preserveStyle ? 'true' : 'false');
   data.set('retainMetadata', params.retainMetadata ? 'true' : 'false');
+  if (params.pdfPasswordsJson) {
+    data.append('pdfPasswordsJson', params.pdfPasswordsJson);
+  } else if (params.pdfOpenPassword?.trim()) {
+    data.append('pdfPassword', params.pdfOpenPassword.trim());
+  }
   if (params.replaceScope !== 'nth') {
     data.delete('occurrenceIndex');
   } else if (params.occurrenceIndex != null) {
@@ -71,8 +78,14 @@ export async function postReplaceBatch(params: {
     let message = `Request failed with ${response.status}`;
     const contentType = response.headers.get('content-type') || '';
     if (contentType.includes('application/json')) {
-      const payload = (await response.json()) as { message?: string };
-      message = payload.message || message;
+      const payload = (await response.json()) as { message?: string; error?: string };
+      if (payload.error === 'pdf_password_required') {
+        message =
+          payload.message ||
+          'This PDF is password-protected. Enter the document password to continue.';
+      } else {
+        message = payload.message || message;
+      }
     } else {
       const text = await response.text();
       if (text) {

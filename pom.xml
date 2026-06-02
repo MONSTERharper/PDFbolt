@@ -5,7 +5,7 @@
 
   <groupId>com.pdfreplace</groupId>
   <artifactId>bolt-replacer</artifactId>
-  <version>0.1.0</version>
+  <version>1.1.0</version>
   <name>PDFBolt Suite</name>
   <description>Hosted PDFBolt tooling; this module provides the bolt-replace PDF text engine and API.</description>
 
