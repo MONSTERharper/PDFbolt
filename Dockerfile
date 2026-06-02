@@ -66,10 +66,11 @@ ENV PDFA_VALIDATE=true
 
 COPY --from=build /app/target/*.jar app.jar
 COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+COPY scripts/docker-healthcheck.sh /usr/local/bin/docker-healthcheck.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh /usr/local/bin/docker-healthcheck.sh
 
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-  CMD-SHELL curl -fsS "http://127.0.0.1:$${PORT:-8080}/api/health" | grep -q '"ready":true' || exit 1
+  CMD ["/usr/local/bin/docker-healthcheck.sh"]
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
