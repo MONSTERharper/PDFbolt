@@ -17,9 +17,11 @@ import java.util.List;
 @RequestMapping("/api")
 public class PdfReplaceController {
     private final PdfReplaceService service;
+    private final ToolUsageService toolUsageService;
 
-    public PdfReplaceController(PdfReplaceService service) {
+    public PdfReplaceController(PdfReplaceService service, ToolUsageService toolUsageService) {
         this.service = service;
+        this.toolUsageService = toolUsageService;
     }
 
     @PostMapping(value = "/replace", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -33,7 +35,9 @@ public class PdfReplaceController {
             @RequestParam(value = "replaceScope", defaultValue = "all") String replaceScope,
             @RequestParam(value = "occurrenceIndex", required = false) Integer occurrenceIndex,
             @RequestParam(value = "preserveStyle", defaultValue = "true") boolean preserveStyle,
-            @RequestParam(value = "retainMetadata", defaultValue = "true") boolean retainMetadata
+            @RequestParam(value = "retainMetadata", defaultValue = "true") boolean retainMetadata,
+            @RequestParam(value = "pdfPassword", required = false) String pdfPassword,
+            @RequestParam(value = "pdfPasswordsJson", required = false) String pdfPasswordsJson
     ) throws Exception {
         PdfReplaceService.BatchReplacementOutput output = service.replaceBatch(
                 mergeFiles(file, files),
@@ -44,8 +48,11 @@ public class PdfReplaceController {
                 replaceScope,
                 occurrenceIndex,
                 preserveStyle,
-                retainMetadata
+                retainMetadata,
+                pdfPassword,
+                pdfPasswordsJson
         );
+        toolUsageService.record("replace");
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(output.contentType()))
                 .contentLength(output.bytes().length)

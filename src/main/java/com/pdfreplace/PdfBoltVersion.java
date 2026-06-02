@@ -34,6 +34,6 @@ public final class PdfBoltVersion {
         if (pkg != null && pkg.getImplementationVersion() != null && !pkg.getImplementationVersion().isBlank()) {
             return pkg.getImplementationVersion();
         }
-        return "0.1.0";
+        return "1.1.0";
     }
 }

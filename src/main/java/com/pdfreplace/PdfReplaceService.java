@@ -25,6 +25,8 @@ import java.util.zip.ZipOutputStream;
 public class PdfReplaceService {
     private static final Logger LOGGER = LoggerFactory.getLogger(PdfReplaceService.class);
 
+    private final PdfDocumentOpener documentOpener;
+
     @Value("${boltreplacer.limits.max-pages:250}")
     private int maxPages;
 
@@ -46,6 +48,10 @@ public class PdfReplaceService {
     @Value("${boltreplacer.limits.max-total-pages:1000}")
     private int maxTotalPages;
 
+    public PdfReplaceService(PdfDocumentOpener documentOpener) {
+        this.documentOpener = documentOpener;
+    }
+
     public BatchReplacementOutput replaceBatch(
             MultipartFile[] pdfFiles,
             List<String> searchList,
@@ -55,7 +61,9 @@ public class PdfReplaceService {
             String replaceScopeRaw,
             Integer occurrenceIndex,
             boolean preserveStyle,
-            boolean retainMetadata
+            boolean retainMetadata,
+            String pdfPassword,
+            String pdfPasswordsJson
     ) throws IOException {
         validateBatch(pdfFiles, searchList, replacementList, replaceScopeRaw, occurrenceIndex);
         DeterministicPdfReplacer.MatchMode matchMode = parseMatchMode(matchModeRaw);
@@ -65,9 +73,18 @@ public class PdfReplaceService {
         List<ReplacementOutput> outputs = new ArrayList<>();
         DeterministicPdfReplacer.Result summary = new DeterministicPdfReplacer.Result(0, 0, 0, 0, occurrenceIndex, 0, 0);
         int totalPagesProcessed = 0;
-        for (MultipartFile pdf : pdfFiles) {
+        for (int i = 0; i < pdfFiles.length; i++) {
+            MultipartFile pdf = pdfFiles[i];
             ReplacementOutput item = replaceSingle(
-                    pdf, rules, strict, matchMode, replaceScope, occurrenceIndex, preserveStyle, retainMetadata);
+                    pdf,
+                    rules,
+                    strict,
+                    matchMode,
+                    replaceScope,
+                    occurrenceIndex,
+                    preserveStyle,
+                    retainMetadata,
+                    PdfPasswordResolver.resolveForUpload(pdf, i, pdfPassword, pdfPasswordsJson));
             outputs.add(item);
             totalPagesProcessed += item.result().pagesScanned();
             if (totalPagesProcessed > maxTotalPages) {
@@ -110,19 +127,21 @@ public class PdfReplaceService {
             DeterministicPdfReplacer.ReplaceScope replaceScope,
             Integer occurrenceIndex,
             boolean preserveStyle,
-            boolean retainMetadata
+            boolean retainMetadata,
+            String pdfPassword
     ) throws IOException {
         Path workDir = Files.createTempDirectory("bolt-replacer-");
-        Path input = workDir.resolve("input.pdf");
-        Path stageInput = input;
+        Path staged = workDir.resolve("input.pdf");
+        Path stageInput = staged;
         Path stageOutput = null;
 
         try {
-            copyUpload(pdf, input);
-            ensureLooksLikePdf(input);
-            enforcePageLimit(input);
+            copyUpload(pdf, staged);
+            ensureLooksLikePdf(staged);
+            try (PdfDocumentOpener.PreparedDocument opened = documentOpener.prepare(staged, pdfPassword, false)) {
+                stageInput = opened.path();
 
-            DeterministicPdfReplacer.Result aggregate = new DeterministicPdfReplacer.Result(0, 0, 0, 0, occurrenceIndex, 0, 0);
+                DeterministicPdfReplacer.Result aggregate = new DeterministicPdfReplacer.Result(0, 0, 0, 0, occurrenceIndex, 0, 0);
             for (int i = 0; i < rules.size(); i++) {
                 ReplacementRule rule = rules.get(i);
                 stageOutput = workDir.resolve("output-" + i + ".pdf");
@@ -155,15 +174,16 @@ public class PdfReplaceService {
                 stageInput = stageOutput;
             }
 
-            if (aggregate.matchesReplaced() == 0) {
-                throw new IllegalArgumentException("No matching text was found in the PDF.");
-            }
+                if (aggregate.matchesReplaced() == 0) {
+                    throw new IllegalArgumentException("No matching text was found in the PDF.");
+                }
 
-            String outputName = outputName(pdf.getOriginalFilename());
-            return new ReplacementOutput(outputName, Files.readAllBytes(stageInput), aggregate);
+                String outputName = outputName(pdf.getOriginalFilename());
+                return new ReplacementOutput(outputName, Files.readAllBytes(stageInput), aggregate);
+            }
         } finally {
             deleteIfExists(stageOutput);
-            deleteIfExists(input);
+            deleteIfExists(staged);
             deleteIfExists(workDir);
         }
     }
@@ -236,15 +256,6 @@ public class PdfReplaceService {
         }
         if (header.length < 5 || header[0] != '%' || header[1] != 'P' || header[2] != 'D' || header[3] != 'F' || header[4] != '-') {
             throw new IllegalArgumentException("The uploaded file does not look like a valid PDF.");
-        }
-    }
-
-    private void enforcePageLimit(Path input) throws IOException {
-        try (PDDocument document = PDDocument.load(input.toFile())) {
-            int pages = document.getNumberOfPages();
-            if (pages > maxPages) {
-                throw new IllegalArgumentException("PDF has " + pages + " pages, exceeding the limit of " + maxPages + ".");
-            }
         }
     }
 

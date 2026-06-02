@@ -587,6 +587,24 @@ public final class DeterministicPdfReplacer {
             return applyRunReconstruction(rewriteRun, matchStart, matchEnd, replacement, substituteFont, preserveStyle);
         }
 
+        if (shouldCollapseSplitOperatorMatch(affected, matchStart, matchEnd)) {
+            int changed = applyRunReconstruction(affected, matchStart, matchEnd, replacement, substituteFont, preserveStyle);
+            neutralizeSupplementaryShowTextOperators(affected);
+            if (!preserveStyle) {
+                zeroInternalArraySpacing(affected);
+            }
+            return changed;
+        }
+
+        if (shouldCollapseSplitOperatorMatchForSubstitute(affected, matchStart, matchEnd, substituteFont)) {
+            int changed = applyRunReconstruction(affected, matchStart, matchEnd, replacement, substituteFont, preserveStyle);
+            neutralizeSupplementaryShowTextOperators(affected);
+            if (!preserveStyle) {
+                zeroInternalArraySpacing(affected);
+            }
+            return changed;
+        }
+
         String matchedOriginal = matchedSubstring(affected, matchStart, matchEnd);
 
         TextSegment first = affected.get(0);
@@ -1116,6 +1134,98 @@ public final class DeterministicPdfReplacer {
         return false;
     }
 
+    /**
+     * Some PDFs split one logical word across a standalone {@code Tj} and a following {@code TJ} at a new
+     * absolute position. The default flexible path puts the full replacement only in the first segment.
+     */
+    private static boolean shouldCollapseSplitOperatorMatch(List<TextSegment> affected, int matchStart, int matchEnd) {
+        return shouldCollapseSplitOperatorMatch(affected, matchStart, matchEnd, false);
+    }
+
+    /**
+     * When a subset font forces a substitute, also collapse partial multi-operator matches (e.g. only
+     * {@code SARVESH} of {@code SARVESH THAPA}) so we do not leave a second {@code TJ} block behind.
+     */
+    private static boolean shouldCollapseSplitOperatorMatchForSubstitute(
+            List<TextSegment> affected,
+            int matchStart,
+            int matchEnd,
+            PDFont substituteFont
+    ) {
+        if (substituteFont == null) {
+            return false;
+        }
+        boolean needsSubstitute = affected.stream().anyMatch(segment -> isSubsetFont(segment.font));
+        if (!needsSubstitute) {
+            return false;
+        }
+        return shouldCollapseSplitOperatorMatch(affected, matchStart, matchEnd, true);
+    }
+
+    private static boolean shouldCollapseSplitOperatorMatch(
+            List<TextSegment> affected,
+            int matchStart,
+            int matchEnd,
+            boolean allowPartialSpan
+    ) {
+        if (affected.size() < 2) {
+            return false;
+        }
+        TextSegment first = affected.get(0);
+        TextSegment last = affected.get(affected.size() - 1);
+        if (!allowPartialSpan && (matchStart != first.start || matchEnd != last.end)) {
+            return false;
+        }
+        if (allowPartialSpan && (matchStart < first.start || matchEnd > last.end)) {
+            return false;
+        }
+        long distinctOperators = affected.stream().mapToInt(segment -> segment.operatorIndex).distinct().count();
+        if (distinctOperators < 2) {
+            return false;
+        }
+        float baselineY = first.y;
+        for (TextSegment segment : affected) {
+            if (Math.abs(segment.y - baselineY) > 0.5f) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Drop leftover kern strings from secondary {@code TJ} blocks after collapsing a split-operator match. */
+    private static void neutralizeSupplementaryShowTextOperators(List<TextSegment> affected) {
+        if (affected.size() < 2) {
+            return;
+        }
+        Set<Integer> seenOperators = new HashSet<>();
+        boolean firstOperator = true;
+        for (TextSegment segment : affected) {
+            if (!seenOperators.add(segment.operatorIndex)) {
+                continue;
+            }
+            if (firstOperator) {
+                firstOperator = false;
+                continue;
+            }
+            if (segment.parentArray != null) {
+                segment.parentArray.clear();
+            }
+        }
+    }
+
+    private static int resolveShowTextOperatorIndex(List<Object> tokens, TextSegment segment) {
+        if (segment.parentArray != null) {
+            for (int i = 0; i + 1 < tokens.size(); i++) {
+                if (tokens.get(i) == segment.parentArray && tokens.get(i + 1) instanceof Operator op && "TJ".equals(op.getName())) {
+                    return i + 1;
+                }
+            }
+            return segment.operatorIndex;
+        }
+        int stringIndex = resolveStandaloneTjStringTokenIndex(tokens, segment);
+        return stringIndex >= 0 ? stringIndex + 1 : segment.operatorIndex;
+    }
+
     private static boolean canUseDynamicArrayReplacement(List<TextSegment> affected, int matchStart, int matchEnd) {
         if (affected.isEmpty()) {
             return false;
@@ -1209,6 +1319,17 @@ public final class DeterministicPdfReplacer {
             throw new IOException("Type3 fonts are not supported by this baseline replacer");
         }
         if (substituteFont != null && isSubsetFont(segment.font)) {
+            if (newText.isEmpty()) {
+                try {
+                    segment.cosString.setValue(segment.font.encode(newText));
+                } catch (IllegalArgumentException e) {
+                    segment.cosString.setValue(new byte[0]);
+                }
+                segment.usesSubstituteFont = false;
+                segment.text = newText;
+                segment.changed = true;
+                return;
+            }
             try {
                 segment.cosString.setValue(substituteFont.encode(newText));
                 segment.usesSubstituteFont = true;
@@ -1682,6 +1803,12 @@ public final class DeterministicPdfReplacer {
         }
     }
 
+    private static void insertFontSwitchOperands(List<Object> tokens, int index, COSName fontName, COSBase fontSize) {
+        tokens.add(index, fontName);
+        tokens.add(index + 1, fontSize);
+        tokens.add(index + 2, Operator.getOperator("Tf"));
+    }
+
     private static void applySubstituteFontSwitches(
             PDPage page,
             List<Object> tokens,
@@ -1698,28 +1825,40 @@ public final class DeterministicPdfReplacer {
 
         List<TextSegment> substituteSegments = segments.stream()
                 .filter(segment -> segment.usesSubstituteFont)
+                .filter(segment -> segment.text != null && !segment.text.isEmpty())
                 .sorted(Comparator.comparingInt((TextSegment segment) -> segment.operatorIndex).reversed())
                 .toList();
 
-        int lastOperatorIndex = -1;
+        Set<Integer> processedOperators = new HashSet<>();
         for (TextSegment segment : substituteSegments) {
-            if (segment.operatorIndex == lastOperatorIndex || segment.fontResourceName == null || segment.fontSize == null) {
+            int operatorIndex = resolveShowTextOperatorIndex(tokens, segment);
+            if (!processedOperators.add(operatorIndex)
+                    || segment.fontResourceName == null
+                    || segment.fontSize == null
+                    || operatorIndex < 0
+                    || operatorIndex >= tokens.size()
+                    || !(tokens.get(operatorIndex) instanceof Operator operator)) {
+                LOGGER.warn(
+                        "Skipped substitute Tf for segment text=[{}] opIndex={} resolvedOp={} fontResource={}",
+                        previewText(segment.text),
+                        segment.operatorIndex,
+                        operatorIndex,
+                        segment.fontResourceName);
                 continue;
             }
-            lastOperatorIndex = segment.operatorIndex;
 
-            Operator operator = (Operator) tokens.get(segment.operatorIndex);
             int operandCount = "\"".equals(operator.getName()) ? 3 : 1;
-            int insertBefore = Math.max(0, segment.operatorIndex - operandCount);
-            int insertAfter = segment.operatorIndex + 1;
+            int insertBefore = Math.max(0, operatorIndex - operandCount);
+            int insertAfter = operatorIndex + 1;
 
-            tokens.add(insertAfter, Operator.getOperator("Tf"));
-            tokens.add(insertAfter, segment.fontSize);
-            tokens.add(insertAfter, segment.fontResourceName);
+            insertFontSwitchOperands(tokens, insertAfter, segment.fontResourceName, segment.fontSize);
+            insertFontSwitchOperands(tokens, insertBefore, substituteFontName, segment.fontSize);
 
-            tokens.add(insertBefore, Operator.getOperator("Tf"));
-            tokens.add(insertBefore, segment.fontSize);
-            tokens.add(insertBefore, substituteFontName);
+            LOGGER.info(
+                    "Injected substitute font switch {} before {} operator at token {}",
+                    substituteFontName.getName(),
+                    operator.getName(),
+                    insertBefore);
         }
     }
 

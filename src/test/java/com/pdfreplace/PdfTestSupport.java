@@ -6,10 +6,21 @@ import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
+
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Base64;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class PdfTestSupport {
+    /** 1×1 PNG (red pixel). */
+    private static final byte[] MINIMAL_PNG = Base64.getDecoder().decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==");
     private PdfTestSupport() {
     }
 
@@ -81,5 +92,35 @@ final class PdfTestSupport {
             document.save(path.toFile());
         }
         return path.toFile();
+    }
+
+    static byte[] readBytes(Path path) throws IOException {
+        return Files.readAllBytes(path);
+    }
+
+    static byte[] minimalPngBytes() {
+        return MINIMAL_PNG.clone();
+    }
+
+    static MockMultipartFile mockPdf(String partName, String filename, byte[] content) {
+        return new MockMultipartFile(partName, filename, MediaType.APPLICATION_PDF_VALUE, content);
+    }
+
+    static MockMultipartFile mockPng(String partName, String filename) {
+        return new MockMultipartFile(partName, filename, "image/png", minimalPngBytes());
+    }
+
+    static void assertPdfMagic(byte[] body) {
+        assertTrue(body.length >= 4, "response too short for PDF");
+        assertEquals('%', (char) body[0]);
+        assertEquals('P', (char) body[1]);
+        assertEquals('D', (char) body[2]);
+        assertEquals('F', (char) body[3]);
+    }
+
+    static void assertZipMagic(byte[] body) {
+        assertTrue(body.length >= 2, "response too short for ZIP");
+        assertEquals('P', (char) body[0]);
+        assertEquals('K', (char) body[1]);
     }
 }

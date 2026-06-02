@@ -1,0 +1,15 @@
+.git
+.github
+.cursor
+**/.DS_Store
+**/node_modules
+new-ui/node_modules
+target
+*.iml
+.idea
+.env
+.env.*
+!.env.example
+**/*.log
+deploy/
+scripts/setup-host.sh

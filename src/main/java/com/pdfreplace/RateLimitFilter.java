@@ -31,6 +31,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
+        if ("GET".equalsIgnoreCase(request.getMethod()) && path.startsWith("/api/tools/popular")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         String key = clientIp(request);
         Instant now = Instant.now();

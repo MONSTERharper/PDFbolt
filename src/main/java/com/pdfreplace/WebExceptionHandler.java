@@ -17,6 +17,11 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class WebExceptionHandler {
+    @ExceptionHandler(PdfPasswordRequiredException.class)
+    public ResponseEntity<Map<String, Object>> pdfPasswordRequired(PdfPasswordRequiredException exception) {
+        return json(HttpStatus.BAD_REQUEST, PdfPasswordRequiredException.ERROR_CODE, exception.getMessage());
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> badRequest(IllegalArgumentException exception) {
         return json(HttpStatus.BAD_REQUEST, "bad_request", exception.getMessage());
