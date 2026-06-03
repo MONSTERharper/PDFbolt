@@ -4,7 +4,7 @@
 #   docker compose up --build -d
 #
 # Or manual build/run (same image):
-#   docker build -t pdfbolt:0.1.0 -t pdfbolt:latest .
+#   docker build -t pdfbolt:1.1.0 -t pdfbolt:latest .
 #   docker run -d --restart always --env-file .env -p 8080:8080 --name pdfbolt pdfbolt:latest
 
 services:
@@ -33,6 +33,11 @@ services:
       SMTP_STARTTLS: "${SMTP_STARTTLS:-true}"
       MAIL_FROM: "${MAIL_FROM:-no-reply@pdfbolt.local}"
       CONTACT_LOG_ONLY: "${CONTACT_LOG_ONLY:-false}"
+      ADSENSE_ENABLED: "${ADSENSE_ENABLED:-true}"
+      ADSENSE_CLIENT: "${ADSENSE_CLIENT:-ca-pub-3054286166063522}"
+      ADSENSE_BANNER_SLOT: "${ADSENSE_BANNER_SLOT:-}"
+      ADSENSE_SIDEBAR_SLOT: "${ADSENSE_SIDEBAR_SLOT:-}"
+      ADSENSE_ADS_TXT_LINE: "${ADSENSE_ADS_TXT_LINE:-google.com, pub-3054286166063522, DIRECT, f08c47fec0942fa0}"
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/api/health"]
       interval: 30s

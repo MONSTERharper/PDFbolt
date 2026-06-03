@@ -42,19 +42,10 @@ RUN apt-get update \
     && mkdir -p /tmp/.config /tmp/.cache
 
 # veraPDF greenfield (amd64 only — arm64 images still convert PDF/A via Ghostscript)
-RUN if [ "${TARGETARCH}" = "amd64" ]; then \
-      apt-get update \
-      && apt-get install -y --no-install-recommends wget unzip \
-      && ( wget -q "https://software.verapdf.org/releases/${VERAPDF_VERSION%.*}/verapdf-greenfield-${VERAPDF_VERSION}-installer.zip" -O /tmp/verapdf.zip \
-           && unzip -q /tmp/verapdf.zip -d /tmp/verapdf-install \
-           && java -jar /tmp/verapdf-install/verapdf-greenfield-*-installer.jar -dir /opt/verapdf -installType standard -installSilent \
-           && ln -sf /opt/verapdf/verapdf /usr/local/bin/verapdf ) \
-      || echo "veraPDF install skipped (pdf-to-pdfa will use Ghostscript only)" \
-      && rm -rf /tmp/verapdf.zip /tmp/verapdf-install \
-      && apt-get purge -y wget unzip \
-      && apt-get autoremove -y \
-      && rm -rf /var/lib/apt/lists/*; \
-    fi
+COPY scripts/install-verapdf.sh /tmp/install-verapdf.sh
+RUN chmod +x /tmp/install-verapdf.sh \
+    && VERAPDF_VERSION="${VERAPDF_VERSION}" TARGETARCH="${TARGETARCH}" /tmp/install-verapdf.sh \
+    && rm -f /tmp/install-verapdf.sh
 
 ENV HOME=/tmp
 ENV SAL_USE_VCLPLUGIN=gen

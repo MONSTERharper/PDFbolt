@@ -122,6 +122,10 @@ sudo docker logs pdfbolt   # should show LibreOffice + Ghostscript OK
 
 Open `http://localhost:8080/app/`
 
+**AdSense `ads.txt`:** the app serves `http://localhost:8080/ads.txt` (publisher `pub-3054286166063522`). On a public domain, verify `curl -sS https://your-domain/ads.txt` returns that line. If you use nginx, proxy `/ads.txt` to the app — see [deploy/nginx-ads-txt.example](deploy/nginx-ads-txt.example).
+
+**AdSense:** run `./scripts/configure-adsense.sh` to write `ADSENSE_BANNER_SLOT` into `.env`, then rebuild Docker. Full checklist: [docs/ADSENSE.md](docs/ADSENSE.md). Nginx example: [deploy/nginx-mypdfbolt.shop.example](deploy/nginx-mypdfbolt.shop.example).
+
 ### Compose (equivalent)
 
 ```bash
@@ -141,6 +145,7 @@ docker compose up -d
 **Notes**
 
 - On **ARM64** hosts (e.g. Apple Silicon), veraPDF is not installed in the image; set `PDFA_VALIDATE=false` in `.env` or accept Ghostscript-only PDF/A (validation skipped).
+- On **amd64**, the image build runs `verapdf --version`; if the build fails at that step, fix network/install before deploying. After deploy, `curl -s localhost:8080/api/health` should show `"verapdf":true`.
 - `JAVA_OPTS` in `.env` overrides the image default heap (see `.env.example`).
 
 ---
@@ -160,6 +165,10 @@ See [.env.example](.env.example). Main keys:
 | `PDFA_VALIDATE` | Run veraPDF after pdf-to-pdfa (default `true`) |
 | `SMTP_*`, `MAIL_FROM` | Contact form email |
 | `CONTACT_LOG_ONLY` | `true` = log contact messages, no SMTP |
+| `ADSENSE_ENABLED` | Serve live AdSense units when slot is set (default `true`) |
+| `ADSENSE_CLIENT` | Publisher id, e.g. `ca-pub-…` |
+| `ADSENSE_BANNER_SLOT` | Display ad unit slot id for the banner |
+| `ADSENSE_SIDEBAR_SLOT` | Optional sidebar slot (defaults to banner) |
 
 ---
 

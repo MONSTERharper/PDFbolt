@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { ExternalLink, X, Info, ShieldAlert, Sparkles, LayoutGrid, Terminal, Share2 } from 'lucide-react';
-import { ADSENSE_SLOTS, hasAdSenseSlots } from '../adsenseConfig';
 import { AdSenseUnit } from './AdSenseUnit';
+import {
+  shouldShowLiveAd,
+  slotForResolvedConfig,
+  useAdsenseConfig,
+} from '../useAdsenseConfig';
 
 interface AdPreset {
   id: string;
@@ -232,19 +236,22 @@ function AdInfoPanel({ onReport, onClose }: { onReport: () => void; onClose: () 
 }
 
 export function BannerAd({ className = '', onInquire }: { className?: string; onInquire?: () => void }) {
+  const adsConfig = useAdsenseConfig();
   const [isDismissed, setIsDismissed] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [reported, setReported] = useState(false);
   const [presetIdx, setPresetIdx] = useState(0);
-  const useAdSense = hasAdSenseSlots && Boolean(ADSENSE_SLOTS.banner);
+  const [liveUnfilled, setLiveUnfilled] = useState(false);
+  const bannerSlot = slotForResolvedConfig(adsConfig, 'banner');
+  const tryLiveAd = shouldShowLiveAd(adsConfig, 'banner') && !liveUnfilled;
 
   useEffect(() => {
-    if (useAdSense || reported || showInfo) return;
+    if (tryLiveAd || reported || showInfo) return;
     const interval = setInterval(() => {
       setPresetIdx((prev) => (prev + 1) % AD_PRESETS.length);
     }, 12000);
     return () => clearInterval(interval);
-  }, [useAdSense, reported, showInfo]);
+  }, [tryLiveAd, reported, showInfo]);
 
   if (isDismissed) return null;
 
@@ -253,7 +260,7 @@ export function BannerAd({ className = '', onInquire }: { className?: string; on
   return (
     <AdChrome
       className={className}
-      label={useAdSense ? 'Google AdSense' : ad.sponsor}
+      label={tryLiveAd ? 'Google AdSense' : ad.sponsor}
       onDismiss={() => setIsDismissed(true)}
       showInfo={showInfo}
       onToggleInfo={() => setShowInfo((v) => !v)}
@@ -266,8 +273,14 @@ export function BannerAd({ className = '', onInquire }: { className?: string; on
         </div>
       ) : showInfo ? (
         <AdInfoPanel onReport={() => setReported(true)} onClose={() => setShowInfo(false)} />
-      ) : useAdSense ? (
-        <AdSenseUnit slot={ADSENSE_SLOTS.banner} format="horizontal" minHeight={90} />
+      ) : tryLiveAd ? (
+        <AdSenseUnit
+          slot={bannerSlot}
+          client={adsConfig.client}
+          format="auto"
+          minHeight={90}
+          onUnfilled={() => setLiveUnfilled(true)}
+        />
       ) : (
         <PresetAdBody ad={ad} onInquire={onInquire} layout="banner" />
       )}
@@ -276,20 +289,22 @@ export function BannerAd({ className = '', onInquire }: { className?: string; on
 }
 
 export function SidebarAd({ className = '', onInquire }: { className?: string; onInquire?: () => void }) {
+  const adsConfig = useAdsenseConfig();
   const [isDismissed, setIsDismissed] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [reported, setReported] = useState(false);
   const [presetIdx, setPresetIdx] = useState(0);
-  const slot = ADSENSE_SLOTS.sidebar || ADSENSE_SLOTS.banner;
-  const useAdSense = hasAdSenseSlots && Boolean(slot);
+  const slot = slotForResolvedConfig(adsConfig, 'sidebar');
+  const [liveUnfilled, setLiveUnfilled] = useState(false);
+  const tryLiveAd = shouldShowLiveAd(adsConfig, 'sidebar') && !liveUnfilled;
 
   useEffect(() => {
-    if (useAdSense || reported || showInfo) return;
+    if (tryLiveAd || reported || showInfo) return;
     const interval = setInterval(() => {
       setPresetIdx((prev) => (prev + 1) % AD_PRESETS.length);
     }, 15000);
     return () => clearInterval(interval);
-  }, [useAdSense, reported, showInfo]);
+  }, [tryLiveAd, reported, showInfo]);
 
   if (isDismissed) return null;
 
@@ -298,7 +313,7 @@ export function SidebarAd({ className = '', onInquire }: { className?: string; o
   return (
     <AdChrome
       className={`max-w-sm ${className}`}
-      label={useAdSense ? 'Google AdSense' : ad.sponsor}
+      label={tryLiveAd ? 'Google AdSense' : ad.sponsor}
       onDismiss={() => setIsDismissed(true)}
       showInfo={showInfo}
       onToggleInfo={() => setShowInfo((v) => !v)}
@@ -310,8 +325,14 @@ export function SidebarAd({ className = '', onInquire }: { className?: string; o
         </div>
       ) : showInfo ? (
         <AdInfoPanel onReport={() => setReported(true)} onClose={() => setShowInfo(false)} />
-      ) : useAdSense ? (
-        <AdSenseUnit slot={slot} format="rectangle" minHeight={250} />
+      ) : tryLiveAd ? (
+        <AdSenseUnit
+          slot={slot}
+          client={adsConfig.client}
+          format="rectangle"
+          minHeight={250}
+          onUnfilled={() => setLiveUnfilled(true)}
+        />
       ) : (
         <PresetAdBody ad={ad} onInquire={onInquire} layout="sidebar" />
       )}

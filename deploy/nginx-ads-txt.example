@@ -1,0 +1,19 @@
+# If nginx sits in front of PDFbolt, ads.txt must be reachable at the domain root:
+#   https://mypdfbolt.shop/ads.txt
+#
+# Option A — proxy to Spring Boot (recommended; same as other routes):
+#
+#   location = /ads.txt {
+#       proxy_pass http://127.0.0.1:8080/ads.txt;
+#       proxy_set_header Host $host;
+#   }
+#
+# Option B — static file on the host (update pub- ID if your AdSense account differs):
+#
+#   location = /ads.txt {
+#       default_type text/plain;
+#       return 200 'google.com, pub-3054286166063522, DIRECT, f08c47fec0942fa0\n';
+#   }
+#
+# Verify after reload:
+#   curl -sS https://mypdfbolt.shop/ads.txt
