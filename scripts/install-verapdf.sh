@@ -24,12 +24,20 @@ wget -q "${URL}" -O "${ZIP}"
 
 rm -rf /tmp/verapdf-install
 unzip -q "${ZIP}" -d /tmp/verapdf-install
-INSTALLER="$(find /tmp/verapdf-install -name '*-installer.jar' | head -1)"
+INSTALLER="$(find /tmp/verapdf-install -type f \( \
+  -name 'verapdf-izpack-installer*.jar' \
+  -o -name 'verapdf-greenfield-*-installer.jar' \
+  -o -name '*-installer.jar' \
+  \) 2>/dev/null | head -1)"
+if [ -z "${INSTALLER}" ]; then
+  INSTALLER="$(find /tmp/verapdf-install -type f -name '*.jar' 2>/dev/null | head -1)"
+fi
 if [ -z "${INSTALLER}" ]; then
   log "installer JAR not found after unzip"
   find /tmp/verapdf-install
   exit 1
 fi
+log "using installer ${INSTALLER}"
 
 rm -rf /opt/verapdf
 java -Djava.awt.headless=true -jar "${INSTALLER}" -dir /opt/verapdf -installType standard -installSilent
