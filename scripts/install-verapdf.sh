@@ -39,10 +39,34 @@ if [ -z "${INSTALLER}" ]; then
 fi
 log "using installer ${INSTALLER}"
 
-rm -rf /opt/verapdf
-java -Djava.awt.headless=true -jar "${INSTALLER}" -dir /opt/verapdf -installType standard -installSilent
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname "$0")" && pwd)"
+AUTO_XML="/tmp/verapdf-auto-install.xml"
+if [ -f "${SCRIPT_DIR}/verapdf-auto-install.xml" ]; then
+  cp "${SCRIPT_DIR}/verapdf-auto-install.xml" "${AUTO_XML}"
+else
+  log "missing ${SCRIPT_DIR}/verapdf-auto-install.xml"
+  exit 1
+fi
 
-VERAPDF_BIN="$(find /opt/verapdf -type f -name verapdf 2>/dev/null | head -1)"
+rm -rf /opt/verapdf
+INSTALL_ROOT="$(dirname "${INSTALLER}")"
+INSTALL_JAR="$(basename "${INSTALLER}")"
+
+# IzPack expects auto-install.xml beside the installer (see docs.verapdf.org/install)
+cd "${INSTALL_ROOT}"
+cp "${AUTO_XML}" ./auto-install.xml
+chmod +x verapdf-install 2>/dev/null || true
+
+if [ -f ./verapdf-install ]; then
+  sh ./verapdf-install ./auto-install.xml
+else
+  java -Djava.awt.headless=true -jar "./${INSTALL_JAR}" ./auto-install.xml
+fi
+
+VERAPDF_BIN="$(find /opt/verapdf \( -type f -o -type l \) -name verapdf 2>/dev/null | head -1)"
+if [ -z "${VERAPDF_BIN}" ]; then
+  VERAPDF_BIN="$(find /opt/verapdf -type f -path '*/bin/*' \( -name verapdf -o -name 'verapdf-*' \) 2>/dev/null | head -1)"
+fi
 if [ -z "${VERAPDF_BIN}" ]; then
   log "verapdf binary not found under /opt/verapdf"
   find /opt/verapdf || true
