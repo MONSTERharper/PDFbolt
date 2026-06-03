@@ -19,9 +19,16 @@ log "Download URL"
 curl -fsSI "https://software.verapdf.org/releases/1.28/verapdf-greenfield-1.28.2-installer.zip" | head -1 | grep -q '200' \
   || fail "veraPDF zip not reachable"
 
-if command -v docker >/dev/null 2>&1; then
+DOCKER=(docker)
+if ! docker info >/dev/null 2>&1; then
+  if sudo docker info >/dev/null 2>&1; then
+    DOCKER=(sudo docker)
+  fi
+fi
+
+if command -v docker >/dev/null 2>&1 || sudo docker info >/dev/null 2>&1; then
   log "Docker trial install (same as image build)"
-  docker run --rm \
+  "${DOCKER[@]}" run --rm \
     -v "${REPO_ROOT}/scripts:/scripts:ro" \
     -e VERAPDF_VERSION=1.28.2 \
     -e TARGETARCH=amd64 \

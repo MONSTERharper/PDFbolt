@@ -40,11 +40,9 @@ fi
 log "using installer ${INSTALLER}"
 
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname "$0")" && pwd)"
-AUTO_XML="/tmp/verapdf-auto-install.xml"
-if [ -f "${SCRIPT_DIR}/verapdf-auto-install.xml" ]; then
-  cp "${SCRIPT_DIR}/verapdf-auto-install.xml" "${AUTO_XML}"
-else
-  log "missing ${SCRIPT_DIR}/verapdf-auto-install.xml"
+AUTO_XML="${SCRIPT_DIR}/verapdf-auto-install.xml"
+if [ ! -f "${AUTO_XML}" ]; then
+  log "missing ${AUTO_XML}"
   exit 1
 fi
 
