@@ -142,6 +142,29 @@ docker compose build --no-cache
 docker compose up -d
 ```
 
+### EC2 periodic disk cleanup
+
+On small instances, old Docker images fill the disk. After `git pull`:
+
+```bash
+chmod +x scripts/ec2-periodic-cleanup.sh
+sudo crontab -e
+```
+
+Add (weekly, Sunday 03:00 UTC — safe prune):
+
+```cron
+0 3 * * 0 /home/ubuntu/PDFbolt/scripts/ec2-periodic-cleanup.sh
+```
+
+Monthly deep clean (removes **all** unused images, not the running container’s image):
+
+```cron
+0 4 1 * * PRUNE_ALL_IMAGES=1 /home/ubuntu/PDFbolt/scripts/ec2-periodic-cleanup.sh
+```
+
+Logs: `journalctl -t pdfbolt-cleanup` (if `logger` is available).
+
 **Notes**
 
 - On **ARM64** hosts (e.g. Apple Silicon), veraPDF is not installed in the image; set `PDFA_VALIDATE=false` in `.env` or accept Ghostscript-only PDF/A (validation skipped).

@@ -17,7 +17,7 @@ services:
       - .env
     environment:
       PORT: "${PORT:-8080}"
-      JAVA_OPTS: "${JAVA_OPTS:--Xms128m -Xmx512m}"
+      JAVA_OPTS: "${JAVA_OPTS:--Xms128m -Xmx384m}"
       HOME: /tmp
       LIBREOFFICE_COMMAND: "${LIBREOFFICE_COMMAND:-soffice}"
       LIBREOFFICE_TIMEOUT_SECONDS: "${LIBREOFFICE_TIMEOUT_SECONDS:-120}"
