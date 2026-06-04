@@ -20,6 +20,7 @@ export function boltToolName(toolId: string): string {
     'pdf-to-powerpoint': 'bolt pdf-to-powerpoint',
     'pdf-to-excel': 'bolt pdf-to-excel',
     'pdf-to-pdfa': 'bolt pdf-to-pdfa',
+    'pdf-to-dxf': 'bolt pdf-to-dxf',
     replace: 'bolt replace',
     'rotate-pdf': 'bolt rotate',
     'add-page-numbers': 'bolt page-numbers',
@@ -72,7 +73,7 @@ export function boltUploadHint(toolId: string): string {
     case 'excel-to-pdf':
       return '1 Office file';
     case 'html-to-pdf':
-      return 'Paste or .html file';
+      return 'HTML text or .html file';
     default:
       return '1 PDF';
   }

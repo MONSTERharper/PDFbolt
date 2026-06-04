@@ -44,17 +44,17 @@ function UploadShell({
   return (
     <div className="lg:col-span-12 bg-gray-50 border border-gray-200 rounded-xl p-4 md:p-6 space-y-3 relative z-20">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-mono uppercase tracking-widest text-gray-700 font-bold block">
+        <span className="text-xs font-mono uppercase tracking-widest text-gray-700 font-bold block">
           {boltUploadHeading(toolId)}
         </span>
-        <span className="text-[8px] font-mono text-gray-500">{boltUploadHint(toolId)}</span>
+        <span className="text-xs font-mono text-gray-500">{boltUploadHint(toolId)}</span>
       </div>
       {children}
       <UploadLimitsNote limits={site.limits} toolId={toolId} />
       {feedback && (
         <p
           role="status"
-          className={`text-[10px] font-mono ${feedback.type === 'ok' ? 'text-emerald-700' : 'text-red-600'}`}
+          className={`text-xs font-mono ${feedback.type === 'ok' ? 'text-emerald-700' : 'text-red-600'}`}
         >
           {feedback.msg}
         </p>
@@ -106,7 +106,7 @@ export function BoltToolUpload({
       <UploadShell toolId={toolId} feedback={feedback}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <span className="text-[9px] font-mono uppercase text-gray-600 font-bold block">
+            <span className="text-xs font-mono uppercase text-gray-600 font-bold block">
               PDF A
             </span>
             <PdfFilePicker
@@ -117,7 +117,7 @@ export function BoltToolUpload({
             />
           </div>
           <div className="space-y-2">
-            <span className="text-[9px] font-mono uppercase text-gray-600 font-bold block">
+            <span className="text-xs font-mono uppercase text-gray-600 font-bold block">
               PDF B
             </span>
             <PdfFilePicker
@@ -163,7 +163,7 @@ export function BoltToolUpload({
           onInvalidFile={onPrimaryPdfInvalid}
           chooseLabel={officeChooseLabel(toolId)}
         />
-        <p className="text-[9px] font-mono text-gray-500 leading-relaxed">
+        <p className="text-xs font-mono text-gray-500 leading-relaxed">
           Converted with LibreOffice on the server. Complex macros, embedded fonts, or password-protected
           files may fail.
         </p>
@@ -174,7 +174,7 @@ export function BoltToolUpload({
   if (kind === 'html-content') {
     return (
       <UploadShell toolId={toolId} feedback={feedback}>
-        <p className="text-[9px] font-mono text-gray-500 leading-relaxed max-w-2xl">
+        <p className="text-xs font-mono text-gray-500 leading-relaxed max-w-2xl">
           Converted with LibreOffice on the server. Complex CSS, web fonts, and JavaScript may not render
           exactly like a browser.
         </p>
@@ -183,7 +183,7 @@ export function BoltToolUpload({
           <button
             type="button"
             onClick={() => onHtmlInputModeChange?.('file')}
-            className={`px-3 py-1.5 text-[10px] font-mono uppercase border-2 border-[#141414] ${
+            className={`px-3 py-1.5 text-xs font-mono uppercase border-2 border-[#141414] ${
               htmlInputMode === 'file'
                 ? 'bg-[#141414] text-white'
                 : 'bg-white text-[#141414] hover:bg-gray-50'
@@ -194,7 +194,7 @@ export function BoltToolUpload({
           <button
             type="button"
             onClick={() => onHtmlInputModeChange?.('paste')}
-            className={`px-3 py-1.5 text-[10px] font-mono uppercase border-2 border-[#141414] ${
+            className={`px-3 py-1.5 text-xs font-mono uppercase border-2 border-[#141414] ${
               htmlInputMode === 'paste'
                 ? 'bg-[#141414] text-white'
                 : 'bg-white text-[#141414] hover:bg-gray-50'
@@ -208,7 +208,7 @@ export function BoltToolUpload({
           <div className="space-y-2">
             <label
               htmlFor="bolt-content-title"
-              className="text-[10px] font-mono uppercase text-gray-600 font-bold block"
+              className="text-xs font-mono uppercase text-gray-600 font-bold block"
             >
               Document title
             </label>
@@ -219,7 +219,7 @@ export function BoltToolUpload({
               onChange={(e) => onToolTitle(e.target.value)}
               className="w-full bg-white border border-[#141414] p-3 font-mono text-xs"
             />
-            <p className="text-[9px] font-mono text-gray-500">
+            <p className="text-xs font-mono text-gray-500">
               Used when pasting a fragment (wraps content in a full HTML page). Optional for full .html files.
             </p>
           </div>
@@ -234,7 +234,7 @@ export function BoltToolUpload({
             <div className="space-y-2">
               <label
                 htmlFor="bolt-content-body"
-                className="text-[10px] font-mono uppercase text-gray-600 font-bold block"
+                className="text-xs font-mono uppercase text-gray-600 font-bold block"
               >
                 HTML content
               </label>
@@ -260,7 +260,7 @@ export function BoltToolUpload({
           <div className="space-y-2">
             <label
               htmlFor="bolt-content-title"
-              className="text-[10px] font-mono uppercase text-gray-600 font-bold block"
+              className="text-xs font-mono uppercase text-gray-600 font-bold block"
             >
               Document title
             </label>
@@ -275,7 +275,7 @@ export function BoltToolUpload({
           <div className="space-y-2">
             <label
               htmlFor="bolt-content-body"
-              className="text-[10px] font-mono uppercase text-gray-600 font-bold block"
+              className="text-xs font-mono uppercase text-gray-600 font-bold block"
             >
               Document text
             </label>

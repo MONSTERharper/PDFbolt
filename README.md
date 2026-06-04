@@ -109,7 +109,7 @@ Runs frontend tests + build, backend tests, JAR package, and (if Docker is insta
 cp .env.example .env
 # Edit SMTP_*, MAIL_FROM, JAVA_OPTS for instance size
 
-sudo docker build -t pdfbolt:1.1.0 -t pdfbolt:latest .
+sudo docker build -t pdfbolt:1.5.0 -t pdfbolt:latest .
 sudo docker run -d \
   --restart always \
   --env-file .env \

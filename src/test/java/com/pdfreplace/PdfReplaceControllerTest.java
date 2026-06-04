@@ -50,7 +50,7 @@ class PdfReplaceControllerTest {
                         .param("matchMode", "exact")
                         .param("replaceScope", "all"))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("exceeding the limit")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Maximum allowed is 1 pages")));
     }
 
     @Test

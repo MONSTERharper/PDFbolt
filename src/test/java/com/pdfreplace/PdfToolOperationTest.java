@@ -39,7 +39,8 @@ class PdfToolOperationTest {
             "sign-pdf",
             "redact-pdf",
             "compare-pdf",
-            "pdf-to-pdfa"
+            "pdf-to-pdfa",
+            "pdf-to-dxf"
     })
     void parsesLiveOperations(String operationId) {
         PdfToolOperation operation = PdfToolOperation.parse(operationId);

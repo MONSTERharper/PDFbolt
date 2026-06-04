@@ -11,6 +11,6 @@ class PdfBoltVersionTest {
         String version = PdfBoltVersion.get();
         assertFalse(version.isBlank());
         assertFalse(version.contains("@"));
-        assertEquals("1.1.0", version);
+        assertEquals("1.5.0", version);
     }
 }

@@ -59,7 +59,7 @@ export function StatusPage({ onBack }: StatusPageProps) {
       <button
         type="button"
         onClick={onBack}
-        className="text-[10px] font-mono uppercase tracking-widest text-gray-500 hover:text-[#FF3300]"
+        className="text-xs font-mono uppercase tracking-widest text-gray-500 hover:text-[#FF3300]"
       >
         ← Back
       </button>
@@ -67,7 +67,7 @@ export function StatusPage({ onBack }: StatusPageProps) {
       <header className="space-y-2">
         <div className="flex items-center gap-2 text-[#FF3300]">
           <Activity size={22} aria-hidden />
-          <p className="text-[10px] font-mono uppercase tracking-widest font-bold">Service status</p>
+          <p className="text-xs font-mono uppercase tracking-widest font-bold">Service status</p>
         </div>
         <h1 className="text-3xl font-black tracking-tight text-[#141414]">Is PDFbolt running?</h1>
         <p className="text-sm text-gray-600 leading-relaxed">
@@ -107,7 +107,7 @@ export function StatusPage({ onBack }: StatusPageProps) {
           </div>
 
           <section className="bg-white border border-[#141414]/15 rounded-xl p-6 shadow-sm">
-            <h2 className="text-[10px] font-mono uppercase tracking-widest text-[#FF3300] font-bold mb-3">
+            <h2 className="text-xs font-mono uppercase tracking-widest text-[#FF3300] font-bold mb-3">
               Dependencies
             </h2>
             <ul>

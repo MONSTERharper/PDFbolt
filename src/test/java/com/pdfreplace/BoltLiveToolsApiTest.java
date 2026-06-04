@@ -171,7 +171,7 @@ class BoltLiveToolsApiTest {
                         .param("metadataTitle", "Bolt Title")
                         .param("metadataAuthor", "Bolt Author")
                         .param("metadataSubject", "Testing")
-                        .param("metadataCreator", "PDFBolt"))
+                        .param("metadataCreator", "PDFbolt"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType("application/pdf"));
     }
@@ -179,6 +179,14 @@ class BoltLiveToolsApiTest {
     @Test
     void pdfForms() throws Exception {
         mockMvc.perform(toolWithFile("pdf-forms"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("application/pdf"));
+    }
+
+    @Test
+    void pdfFormsWithoutFlattening() throws Exception {
+        mockMvc.perform(toolWithFile("pdf-forms")
+                        .param("formsFlatten", "false"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType("application/pdf"));
     }
@@ -225,6 +233,17 @@ class BoltLiveToolsApiTest {
     }
 
     @Test
+    @EnabledIf("com.pdfreplace.PdfToDxfConditions#isAvailable")
+    void pdfToDxf() throws Exception {
+        mockMvc.perform(toolWithFile("pdf-to-dxf"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("application/zip"))
+                .andExpect(header().string(
+                        "Content-Disposition",
+                        org.hamcrest.Matchers.containsString("_dxf_pages.zip")));
+    }
+
+    @Test
     void comparePdf() throws Exception {
         mockMvc.perform(multipart("/api/pdf/tools")
                         .file(PdfTestSupport.mockPdf("files", "a.pdf", singlePagePdf))
@@ -246,6 +265,20 @@ class BoltLiveToolsApiTest {
                         .param("sigY", "50")
                         .param("sigWidth", "100")
                         .param("sigHeight", "40"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("application/pdf"));
+    }
+
+    @Test
+    void signPdfMultipleSignatures() throws Exception {
+        String placementsJson = "[{\"pageNum\":1,\"x\":50,\"y\":50,\"width\":100,\"height\":40},"
+                + "{\"pageNum\":2,\"x\":60,\"y\":60,\"width\":100,\"height\":40}]";
+        mockMvc.perform(multipart("/api/pdf/tools")
+                        .file(PdfTestSupport.mockPdf("file", "sample.pdf", twoPagePdf))
+                        .file(PdfTestSupport.mockPng("signatures", "signature-0.png"))
+                        .file(PdfTestSupport.mockPng("signatures", "signature-1.png"))
+                        .param("operation", "sign-pdf")
+                        .param("signaturesJson", placementsJson))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType("application/pdf"));
     }

@@ -391,7 +391,7 @@ export function ComparePdfViewer({ fileA, fileB, pdfPasswords, report }: Compare
     return (
       <div className={`flex flex-col min-w-0 flex-1 border ${headerClass.split(' ')[1]} border-t-0`}>
         <div
-          className={`px-3 py-1.5 border-b text-[11px] font-mono truncate ${headerClass}`}
+          className={`px-3 py-1.5 border-b text-sm font-mono truncate ${headerClass}`}
           title={side === 'left' ? fileA.name : fileB.name}
         >
           {side === 'left' ? fileA.name : fileB.name}
@@ -426,7 +426,7 @@ export function ComparePdfViewer({ fileA, fileB, pdfPasswords, report }: Compare
   return (
     <div className="border border-[#141414] rounded-lg overflow-hidden bg-[#ebe9e4] shadow-xs">
       {/* Meld-style toolbar */}
-      <div className="flex flex-wrap items-center gap-1 px-2 py-1.5 bg-[#d4d2cd] border-b border-[#141414]/30 text-[11px] font-mono">
+      <div className="flex flex-wrap items-center gap-1 px-2 py-1.5 bg-[#d4d2cd] border-b border-[#141414]/30 text-sm font-mono">
         <button
           type="button"
           title="Previous difference"
@@ -511,10 +511,10 @@ export function ComparePdfViewer({ fileA, fileB, pdfPasswords, report }: Compare
       <div className="flex min-h-[360px]">
         {/* Changes list (Meld sidebar) */}
         <aside className="w-36 sm:w-44 shrink-0 border-r border-[#141414]/20 bg-[#e8e6e1] flex flex-col">
-          <div className="px-2 py-1.5 text-[10px] font-mono uppercase tracking-wider font-bold text-gray-700 border-b border-[#141414]/15">
+          <div className="px-2 py-1.5 text-xs font-mono uppercase tracking-wider font-bold text-gray-700 border-b border-[#141414]/15">
             Changes
           </div>
-          <div className="flex-1 overflow-y-auto text-[10px] font-mono">
+          <div className="flex-1 overflow-y-auto text-xs font-mono">
             {!report && (
               <p className="p-2 text-gray-500 leading-relaxed">Compare to list changed pages.</p>
             )}
@@ -542,7 +542,7 @@ export function ComparePdfViewer({ fileA, fileB, pdfPasswords, report }: Compare
                     Page {row.page}
                   </span>
                   {diff && (
-                    <span className="block text-[9px] text-gray-600 mt-0.5 pl-2.5">
+                    <span className="block text-xs text-gray-600 mt-0.5 pl-2.5">
                       {!row.textMatch && row.visualSimilarityPercent < 98.5
                         ? 'text · visual'
                         : !row.textMatch
@@ -565,7 +565,7 @@ export function ComparePdfViewer({ fileA, fileB, pdfPasswords, report }: Compare
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-4 px-3 py-1.5 text-[9px] font-mono uppercase tracking-wider text-gray-600 bg-[#e0ded9] border-t border-[#141414]/15">
+      <div className="flex flex-wrap gap-4 px-3 py-1.5 text-xs font-mono uppercase tracking-wider text-gray-600 bg-[#e0ded9] border-t border-[#141414]/15">
         <span className="flex items-center gap-1">
           <span className="inline-block w-3 h-3 rounded-sm bg-[#dce8f5] border border-[#9cb4cc]" />
           Left (A)

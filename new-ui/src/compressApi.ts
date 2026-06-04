@@ -10,7 +10,7 @@ export const COMPRESS_LEVEL_OPTIONS: {
   {
     value: 'strong',
     label: 'High compression',
-    hint: 'Smallest file size — stronger JPEG and smaller max image size.',
+    hint: 'Smallest file — stronger compression, may reduce image quality.',
   },
   {
     value: 'balanced',
@@ -20,7 +20,7 @@ export const COMPRESS_LEVEL_OPTIONS: {
   {
     value: 'high',
     label: 'Less compression',
-    hint: 'High quality, less compression — high JPEG quality; only large photos resampled.',
+    hint: 'Best quality — only very large images are reduced.',
   },
 ];
 
@@ -121,8 +121,8 @@ export async function postCompress(params: {
     response = await fetch('/api/compress', { method: 'POST', body: data });
   } catch (err) {
     const hint = import.meta.env.DEV
-      ? 'Could not reach PDFBolt at /api/compress. Start the Java backend (mvn spring-boot:run) and open http://localhost:8080/.'
-      : 'Could not reach PDFBolt. Check your connection and try again.';
+      ? 'Could not reach PDFbolt at /api/compress. Start the Java backend (mvn spring-boot:run) and open http://localhost:8080/.'
+      : 'Could not reach PDFbolt. Check your connection and try again.';
     if (err instanceof TypeError) {
       throw new Error(hint);
     }

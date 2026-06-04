@@ -4,17 +4,22 @@
 #   docker compose up --build -d
 #
 # Or manual build/run (same image):
-#   docker build -t pdfbolt:1.1.0 -t pdfbolt:latest .
+#   docker build -t pdfbolt:1.5.0 -t pdfbolt:latest .
 #   docker run -d --restart always --env-file .env -p 8080:8080 --name pdfbolt pdfbolt:latest
 
 services:
   boltreplacer:
-    build: .
+    build:
+      context: .
+      tags:
+        - pdfbolt:1.5.0
+        - pdfbolt:latest
     image: pdfbolt:latest
     ports:
       - "${PORT:-8080}:8080"
     env_file:
-      - .env
+      - path: .env
+        required: false
     environment:
       PORT: "${PORT:-8080}"
       JAVA_OPTS: "${JAVA_OPTS:--Xms128m -Xmx384m}"
@@ -25,6 +30,9 @@ services:
       GHOSTSCRIPT_TIMEOUT_SECONDS: "${GHOSTSCRIPT_TIMEOUT_SECONDS:-120}"
       VERAPDF_COMMAND: "${VERAPDF_COMMAND:-verapdf}"
       PDFA_VALIDATE: "${PDFA_VALIDATE:-true}"
+      PDF_DXF_PYTHON: "${PDF_DXF_PYTHON:-python3}"
+      PDF_DXF_SCRIPT: "${PDF_DXF_SCRIPT:-/app/scripts/pdf_to_dxf.py}"
+      PDF_DXF_TIMEOUT_SECONDS: "${PDF_DXF_TIMEOUT_SECONDS:-120}"
       SMTP_HOST: "${SMTP_HOST:-}"
       SMTP_PORT: "${SMTP_PORT:-587}"
       SMTP_USERNAME: "${SMTP_USERNAME:-}"
@@ -33,6 +41,7 @@ services:
       SMTP_STARTTLS: "${SMTP_STARTTLS:-true}"
       MAIL_FROM: "${MAIL_FROM:-no-reply@pdfbolt.local}"
       CONTACT_LOG_ONLY: "${CONTACT_LOG_ONLY:-false}"
+      CONTACT_TO_EMAIL: "${CONTACT_TO_EMAIL:-}"
       ADSENSE_ENABLED: "${ADSENSE_ENABLED:-true}"
       ADSENSE_CLIENT: "${ADSENSE_CLIENT:-ca-pub-3054286166063522}"
       ADSENSE_BANNER_SLOT: "${ADSENSE_BANNER_SLOT:-}"

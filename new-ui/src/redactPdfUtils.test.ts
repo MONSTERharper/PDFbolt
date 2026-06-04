@@ -23,4 +23,14 @@ describe('redactPdfUtils', () => {
     expect(back.w).toBeCloseTo(original.w);
     expect(back.h).toBeCloseTo(original.h);
   });
+
+  it('converts device-pixel canvas coords when pixelScale includes DPR', () => {
+    const pageHeight = 792;
+    const pixelScale = 2; // fitScale 1 × DPR 2
+    const pdf = canvasRectToPdf({ x: 200, y: 100, w: 80, h: 40 }, pageHeight, pixelScale);
+    expect(pdf.x).toBe(100);
+    expect(pdf.w).toBe(40);
+    expect(pdf.h).toBe(20);
+    expect(pdf.y).toBe(pageHeight - 70);
+  });
 });

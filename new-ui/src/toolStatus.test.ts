@@ -23,6 +23,7 @@ const LIVE_TOOLS = [
   'html-to-pdf',
   'compare-pdf',
   'pdf-to-pdfa',
+  'pdf-to-dxf',
   'pdf-to-word',
   'pdf-to-powerpoint',
   'pdf-to-excel',

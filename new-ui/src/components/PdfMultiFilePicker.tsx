@@ -61,7 +61,7 @@ export function PdfMultiFilePicker({
             ? chooseLabel
             : `${files.length} PDF${files.length === 1 ? '' : 's'} selected`}
         </span>
-        <span className="shrink-0 bg-[#FF3300] px-3 py-1.5 text-[10px] font-mono font-bold uppercase text-white">
+        <span className="shrink-0 bg-[#FF3300] px-3 py-1.5 text-xs font-mono font-bold uppercase text-white">
           {files.length === 0 ? 'Browse' : 'Add more'}
         </span>
         <input
@@ -77,12 +77,12 @@ export function PdfMultiFilePicker({
 
       {files.length > 0 && (
         <div className="mt-3 space-y-1.5 rounded border border-gray-200 bg-white p-3">
-          <p className="text-[9px] font-mono uppercase text-gray-500">{listCaption}</p>
+          <p className="text-xs font-mono uppercase text-gray-500">{listCaption}</p>
           <ol className="space-y-1">
             {files.map((f, i) => (
               <li
                 key={`${f.name}-${f.size}-${i}`}
-                className="flex items-center justify-between gap-2 text-[10px] font-mono text-gray-700"
+                className="flex items-center justify-between gap-2 text-xs font-mono text-gray-700"
               >
                 <span>
                   {i + 1}. {f.name}
@@ -100,7 +100,7 @@ export function PdfMultiFilePicker({
             ))}
           </ol>
           {files.length < minFiles && (
-            <p className="text-[9px] font-mono text-amber-700 pt-1">
+            <p className="text-xs font-mono text-amber-700 pt-1">
               Add at least {minFiles} PDFs to run {boltToolLabel}.
             </p>
           )}

@@ -5,7 +5,7 @@ export function UploadLimitsNote({ limits, toolId }: { limits: SiteLimits; toolI
   const isMerge = toolId === 'merge';
 
   return (
-    <p className="text-[9px] text-gray-500 font-sans leading-relaxed border-t border-gray-200 pt-2 mt-2">
+    <p className="text-sm text-gray-500 font-sans leading-relaxed border-t border-gray-200 pt-2 mt-2">
       <strong className="text-gray-600">Limits:</strong> up to {limits.maxFileSizeLabel} per file,{' '}
       {limits.maxTotalUploadLabel} total per request, max {limits.maxFiles} files
       {isMerge ? ' for merge' : ''}.{' '}

@@ -163,7 +163,7 @@ public class PdfCompressService {
         try (org.apache.pdfbox.pdmodel.PDDocument document = org.apache.pdfbox.pdmodel.PDDocument.load(input.toFile())) {
             int pages = document.getNumberOfPages();
             if (pages > maxPages) {
-                throw new IllegalArgumentException("PDF has " + pages + " pages, exceeding the limit of " + maxPages + ".");
+                throw new IllegalArgumentException(HumanMessages.tooManyPages(pages, maxPages));
             }
         }
     }

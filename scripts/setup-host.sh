@@ -94,6 +94,19 @@ install_packages_apt() {
   if [[ "${INSTALL_NODE}" == "true" ]] && ! command -v node >/dev/null 2>&1; then
     apt-get install -y nodejs npm || warn "nodejs/npm not in repos — install Node 20+ manually for UI builds"
   fi
+  install_pdf_dxf_python_deps_apt
+}
+
+install_pdf_dxf_python_deps_apt() {
+  if ! command -v python3 >/dev/null 2>&1; then
+    apt-get install -y python3 python3-pip || warn "python3 not installed — pdf-to-dxf will be unavailable"
+  fi
+  if command -v python3 >/dev/null 2>&1 && [[ -f "${REPO_ROOT}/scripts/requirements-dxf.txt" ]]; then
+    log "Installing PDF→DXF Python packages (ezdxf, PyMuPDF)…"
+    python3 -m pip install --break-system-packages -r "${REPO_ROOT}/scripts/requirements-dxf.txt" \
+      || python3 -m pip install -r "${REPO_ROOT}/scripts/requirements-dxf.txt" \
+      || warn "Could not install ezdxf/PyMuPDF — run ./scripts/install-pdf-dxf-deps.sh"
+  fi
 }
 
 install_packages_dnf() {
@@ -116,6 +129,18 @@ install_packages_dnf() {
     }
   if [[ "${INSTALL_MAVEN}" == "true" ]] && ! command -v mvn >/dev/null 2>&1; then
     dnf install -y maven || warn "Install Maven manually if not available"
+  fi
+  install_pdf_dxf_python_deps_dnf
+}
+
+install_pdf_dxf_python_deps_dnf() {
+  if ! command -v python3 >/dev/null 2>&1; then
+    dnf install -y python3 python3-pip || warn "python3 not installed — pdf-to-dxf will be unavailable"
+  fi
+  if command -v python3 >/dev/null 2>&1 && [[ -f "${REPO_ROOT}/scripts/requirements-dxf.txt" ]]; then
+    log "Installing PDF→DXF Python packages (ezdxf, PyMuPDF)…"
+    python3 -m pip install -r "${REPO_ROOT}/scripts/requirements-dxf.txt" \
+      || warn "Could not install ezdxf/PyMuPDF — run ./scripts/install-pdf-dxf-deps.sh"
   fi
 }
 

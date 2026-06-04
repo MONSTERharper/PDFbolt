@@ -3,6 +3,9 @@ package com.pdfreplace;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -12,12 +15,15 @@ import java.util.Locale;
 
 @Service
 public class PdfToolsService {
+    private static final ObjectMapper JSON = new ObjectMapper();
+
     private final PdfUploadValidator uploadValidator;
     private final OfficeToPdfService officeToPdfService;
     private final HtmlToPdfService htmlToPdfService;
     private final PdfDocumentOpener documentOpener;
     private final PdfToPdfaService pdfToPdfaService;
     private final PdfToOfficeService pdfToOfficeService;
+    private final PdfToDxfService pdfToDxfService;
 
     public PdfToolsService(
             PdfUploadValidator uploadValidator,
@@ -25,7 +31,8 @@ public class PdfToolsService {
             HtmlToPdfService htmlToPdfService,
             PdfDocumentOpener documentOpener,
             PdfToPdfaService pdfToPdfaService,
-            PdfToOfficeService pdfToOfficeService
+            PdfToOfficeService pdfToOfficeService,
+            PdfToDxfService pdfToDxfService
     ) {
         this.uploadValidator = uploadValidator;
         this.officeToPdfService = officeToPdfService;
@@ -33,6 +40,7 @@ public class PdfToolsService {
         this.documentOpener = documentOpener;
         this.pdfToPdfaService = pdfToPdfaService;
         this.pdfToOfficeService = pdfToOfficeService;
+        this.pdfToDxfService = pdfToDxfService;
     }
 
     public ToolOutput execute(
@@ -40,6 +48,7 @@ public class PdfToolsService {
             MultipartFile file,
             MultipartFile[] files,
             MultipartFile signature,
+            MultipartFile[] signatures,
             ToolParams params
     ) throws IOException {
         PdfToolOperation operation = PdfToolOperation.parse(operationRaw);
@@ -65,6 +74,7 @@ public class PdfToolsService {
             case PDF_TO_TEXT -> pdfToText(file, params, params.exportFormat());
             case PDF_TO_CSV -> pdfToCsv(file, params);
             case PDF_TO_PDFA -> pdfToPdfa(file, params);
+            case PDF_TO_DXF -> pdfToDxf(file, params);
             case ROTATE_PDF -> rotate(file, params, params.angle(), params.rotationScope());
             case ADD_PAGE_NUMBERS -> pageNumbers(file, params);
             case ADD_WATERMARK -> watermark(file, params);
@@ -73,7 +83,7 @@ public class PdfToolsService {
             case PDF_FORMS -> flattenForms(file, params);
             case UNLOCK_PDF -> unlock(file, params);
             case PROTECT_PDF -> protect(file, params, params.password(), params.ownerPassword());
-            case SIGN_PDF -> sign(file, signature, params);
+            case SIGN_PDF -> sign(file, signature, signatures, params);
             case REDACT_PDF -> redact(file, params);
             case COMPARE_PDF -> compare(file, files, params);
         };
@@ -239,6 +249,10 @@ public class PdfToolsService {
                 headers);
     }
 
+    private ToolOutput pdfToDxf(MultipartFile file, ToolParams params) throws IOException {
+        return pdfToDxfService.convert(file, params.pdfPassword(), params.pdfPasswordsJson());
+    }
+
     private ToolOutput rotate(MultipartFile file, ToolParams params, int angle, String scope) throws IOException {
         try (PreparedPdfInput input = stagePdf(file, params, PdfToolOperation.ROTATE_PDF)) {
             byte[] bytes = PdfToolsEngine.rotate(input.processingPath(), angle, scope);
@@ -296,8 +310,9 @@ public class PdfToolsService {
 
     private ToolOutput flattenForms(MultipartFile file, ToolParams params) throws IOException {
         try (PreparedPdfInput input = stagePdf(file, params, PdfToolOperation.PDF_FORMS)) {
-            byte[] bytes = PdfToolsEngine.flattenForms(input.processingPath());
-            return ToolOutput.pdf(bytes, PdfUploadValidator.boltOutputName(file.getOriginalFilename(), "forms", ".pdf"));
+            byte[] bytes = PdfToolsEngine.processPdfForms(input.processingPath(), params.formsFlatten());
+            String suffix = params.formsFlatten() ? "forms-flat" : "forms";
+            return ToolOutput.pdf(bytes, PdfUploadValidator.boltOutputName(file.getOriginalFilename(), suffix, ".pdf"));
         }
     }
 
@@ -319,25 +334,90 @@ public class PdfToolsService {
         }
     }
 
-    private ToolOutput sign(MultipartFile file, MultipartFile signature, ToolParams params) throws IOException {
+    private ToolOutput sign(
+            MultipartFile file,
+            MultipartFile signature,
+            MultipartFile[] signatures,
+            ToolParams params
+    ) throws IOException {
+        List<ResolvedSignature> resolved = resolveSignatures(signature, signatures, params);
+        List<Path> tempPaths = new ArrayList<>();
+        try (PreparedPdfInput input = stagePdf(file, params, PdfToolOperation.SIGN_PDF)) {
+            List<PdfToolsEngine.SignatureStamp> stamps = new ArrayList<>();
+            for (ResolvedSignature resolvedSignature : resolved) {
+                Path sigPath = Files.createTempFile("pdfbolt-sig-", ".png");
+                tempPaths.add(sigPath);
+                PdfUploadValidator.copyUpload(resolvedSignature.image(), sigPath);
+                stamps.add(new PdfToolsEngine.SignatureStamp(
+                        sigPath,
+                        resolvedSignature.pageNum(),
+                        resolvedSignature.x(),
+                        resolvedSignature.y(),
+                        resolvedSignature.width(),
+                        resolvedSignature.height()));
+            }
+            byte[] bytes = PdfToolsEngine.sign(input.processingPath(), stamps);
+            return ToolOutput.pdf(bytes, PdfUploadValidator.boltOutputName(file.getOriginalFilename(), "signed", ".pdf"));
+        } finally {
+            for (Path tempPath : tempPaths) {
+                Files.deleteIfExists(tempPath);
+            }
+        }
+    }
+
+    private record ResolvedSignature(
+            MultipartFile image,
+            int pageNum,
+            float x,
+            float y,
+            float width,
+            float height
+    ) {}
+
+    private record SignaturePlacementDto(int pageNum, float x, float y, float width, float height) {}
+
+    private List<ResolvedSignature> resolveSignatures(
+            MultipartFile signature,
+            MultipartFile[] signatures,
+            ToolParams params
+    ) throws IOException {
+        if (signatures != null
+                && signatures.length > 0
+                && params.signaturesJson() != null
+                && !params.signaturesJson().isBlank()) {
+            List<SignaturePlacementDto> placements = JSON.readValue(
+                    params.signaturesJson(),
+                    new TypeReference<>() {});
+            if (placements.size() != signatures.length) {
+                throw new IllegalArgumentException("Signature count does not match placement data.");
+            }
+            List<ResolvedSignature> resolved = new ArrayList<>();
+            for (int i = 0; i < placements.size(); i++) {
+                MultipartFile image = signatures[i];
+                if (image == null || image.isEmpty()) {
+                    throw new IllegalArgumentException("Draw a signature before signing.");
+                }
+                SignaturePlacementDto placement = placements.get(i);
+                resolved.add(new ResolvedSignature(
+                        image,
+                        placement.pageNum(),
+                        placement.x(),
+                        placement.y(),
+                        placement.width(),
+                        placement.height()));
+            }
+            return resolved;
+        }
         if (signature == null || signature.isEmpty()) {
             throw new IllegalArgumentException("Draw a signature before signing.");
         }
-        Path sigPath = Files.createTempFile("pdfbolt-sig-", ".png");
-        try (PreparedPdfInput input = stagePdf(file, params, PdfToolOperation.SIGN_PDF)) {
-            PdfUploadValidator.copyUpload(signature, sigPath);
-            byte[] bytes = PdfToolsEngine.sign(
-                    input.processingPath(),
-                    sigPath,
-                    params.sigPage(),
-                    params.sigX(),
-                    params.sigY(),
-                    params.sigWidth(),
-                    params.sigHeight());
-            return ToolOutput.pdf(bytes, PdfUploadValidator.boltOutputName(file.getOriginalFilename(), "signed", ".pdf"));
-        } finally {
-            Files.deleteIfExists(sigPath);
-        }
+        return List.of(new ResolvedSignature(
+                signature,
+                params.sigPage(),
+                params.sigX(),
+                params.sigY(),
+                params.sigWidth(),
+                params.sigHeight()));
     }
 
     private ToolOutput redact(MultipartFile file, ToolParams params) throws IOException {
@@ -515,11 +595,13 @@ public class PdfToolsService {
             float sigY,
             float sigWidth,
             float sigHeight,
+            String signaturesJson,
             int redactPage,
             float redactX,
             float redactY,
             float redactWidth,
-            float redactHeight
+            float redactHeight,
+            boolean formsFlatten
     ) {
         static ToolParams fromRequest(
                 String pageRange,
@@ -557,11 +639,13 @@ public class PdfToolsService {
                 Float sigY,
                 Float sigWidth,
                 Float sigHeight,
+                String signaturesJson,
                 Integer redactPage,
                 Float redactX,
                 Float redactY,
                 Float redactWidth,
-                Float redactHeight
+                Float redactHeight,
+                Boolean formsFlatten
         ) {
             return new ToolParams(
                     pageRange,
@@ -599,11 +683,13 @@ public class PdfToolsService {
                     sigY == null ? 100f : sigY,
                     sigWidth == null ? 150f : sigWidth,
                     sigHeight == null ? 50f : sigHeight,
+                    signaturesJson,
                     redactPage == null ? 1 : redactPage,
                     redactX == null ? 40f : redactX,
                     redactY == null ? 40f : redactY,
                     redactWidth == null ? 200f : redactWidth,
-                    redactHeight == null ? 40f : redactHeight
+                    redactHeight == null ? 40f : redactHeight,
+                    formsFlatten == null || formsFlatten
             );
         }
     }
@@ -633,6 +719,14 @@ public class PdfToolsService {
 
         static ToolOutput office(byte[] bytes, String filename, String contentType) {
             return new ToolOutput(bytes, contentType, filename, null, java.util.Map.of());
+        }
+
+        static ToolOutput dxf(byte[] bytes, String filename) {
+            return new ToolOutput(bytes, "application/dxf", filename, null, java.util.Map.of());
+        }
+
+        static ToolOutput zip(byte[] bytes, String filename) {
+            return new ToolOutput(bytes, "application/zip", filename, null, java.util.Map.of());
         }
 
         static ToolOutput json(String json) {

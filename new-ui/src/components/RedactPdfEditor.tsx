@@ -457,7 +457,7 @@ export function RedactPdfEditor({
 
   if (!file) {
     return (
-      <p className="text-[10px] font-mono text-gray-500">
+      <p className="text-xs font-mono text-gray-500">
         Upload a PDF above, then drag on the page to draw black redaction boxes.
       </p>
     );
@@ -465,14 +465,14 @@ export function RedactPdfEditor({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-[10px] font-mono text-amber-900 leading-relaxed">
+      <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-mono text-amber-900 leading-relaxed">
         <strong className="uppercase tracking-wider">Permanent redaction</strong> — drag on the page to place
         black boxes. The downloaded PDF bakes the boxes into the page image, so the covered content cannot be
         selected or copied afterward.
       </div>
 
       {loadError && (
-        <p className="text-[10px] font-mono text-red-700 border border-red-200 bg-red-50 px-3 py-2 rounded">
+        <p className="text-xs font-mono text-red-700 border border-red-200 bg-red-50 px-3 py-2 rounded">
           {loadError}
         </p>
       )}
@@ -501,7 +501,7 @@ export function RedactPdfEditor({
             <ChevronRight size={16} />
           </button>
         </div>
-        <p className="text-[9px] font-mono text-gray-500">Click and drag to draw a black box</p>
+        <p className="text-xs font-mono text-gray-500">Click and drag to draw a black box</p>
       </div>
 
       <div
@@ -519,7 +519,7 @@ export function RedactPdfEditor({
         )}
 
         {showPageSpinner && (
-          <div className="absolute top-2 right-2 z-20 rounded bg-white/90 border border-[#141414] px-2 py-1 text-[9px] font-mono">
+          <div className="absolute top-2 right-2 z-20 rounded bg-white/90 border border-[#141414] px-2 py-1 text-xs font-mono">
             Rendering page…
           </div>
         )}
@@ -548,13 +548,13 @@ export function RedactPdfEditor({
       {pageRegions.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[9px] font-mono uppercase font-bold text-gray-600">
+            <span className="text-xs font-mono uppercase font-bold text-gray-600">
               Boxes on this page ({pageRegions.length})
             </span>
             <button
               type="button"
               onClick={clearPage}
-              className="text-[9px] font-mono uppercase text-[#FF3300] hover:underline"
+              className="text-xs font-mono uppercase text-[#FF3300] hover:underline"
             >
               Clear page
             </button>
@@ -564,7 +564,7 @@ export function RedactPdfEditor({
               r.pageNum === pageNum ? (
                 <li
                   key={globalIndex}
-                  className="flex items-center justify-between text-[10px] font-mono border border-gray-200 px-2 py-1"
+                  className="flex items-center justify-between text-xs font-mono border border-gray-200 px-2 py-1"
                 >
                   <span>Box {globalIndex + 1}</span>
                   <button
@@ -583,7 +583,7 @@ export function RedactPdfEditor({
       )}
 
       {regions.length > 0 && (
-        <p className="text-[9px] font-mono text-gray-500">
+        <p className="text-xs font-mono text-gray-500">
           {regions.length} box{regions.length === 1 ? '' : 'es'} total across all pages.{' '}
           <button type="button" onClick={clearAll} className="text-[#FF3300] hover:underline">
             Clear all

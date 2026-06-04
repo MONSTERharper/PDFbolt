@@ -53,6 +53,15 @@ else
   log "veraPDF: skipped (PDFA_VALIDATE=${PDFA_VALIDATE})"
 fi
 
+PDF_DXF_PY="${PDF_DXF_PYTHON:-python3}"
+PDF_DXF_SCRIPT="${PDF_DXF_SCRIPT:-/app/scripts/pdf_to_dxf.py}"
+if [[ -f "${PDF_DXF_SCRIPT}" ]] && command -v "${PDF_DXF_PY}" >/dev/null 2>&1 \
+    && "${PDF_DXF_PY}" -c "import ezdxf, fitz" >/dev/null 2>&1; then
+  log "PDF to DXF: OK (${PDF_DXF_PY} + ${PDF_DXF_SCRIPT})"
+else
+  warn "PDF to DXF not ready — install Python 3, ezdxf, PyMuPDF, and pdf_to_dxf.py for pdf-to-dxf."
+fi
+
 JAVA_OPTS="${JAVA_OPTS:--Xms128m -Xmx512m}"
 log "Starting PDFbolt (JAVA_OPTS=${JAVA_OPTS})…"
 exec java ${JAVA_OPTS} -jar /app/app.jar

@@ -22,8 +22,8 @@ export async function postPdfTool(form: FormData): Promise<PdfToolResult> {
     response = await fetch('/api/pdf/tools', { method: 'POST', body: form });
   } catch (err) {
     const hint = import.meta.env.DEV
-      ? 'Could not reach PDFBolt at /api/pdf/tools. Start the Java backend (mvn spring-boot:run) and open http://localhost:8080/.'
-      : 'Could not reach PDFBolt. Check your connection and try again.';
+      ? 'Could not reach PDFbolt at /api/pdf/tools. Start the Java backend (mvn spring-boot:run) and open http://localhost:8080/.'
+      : 'Could not reach PDFbolt. Check your connection and try again.';
     if (err instanceof TypeError) {
       throw new Error(hint);
     }

@@ -48,6 +48,8 @@ declare global {
 
 let scriptLoadPromise: Promise<void> | null = null;
 
+const ADSENSE_SCRIPT_ID = 'pdfbolt-adsense-loader';
+
 /** Load adsbygoogle.js once. */
 export function loadAdSenseScript(client: string = ADSENSE_CLIENT): Promise<void> {
   if (!client.trim()) {
@@ -56,15 +58,15 @@ export function loadAdSenseScript(client: string = ADSENSE_CLIENT): Promise<void
   if (typeof document === 'undefined') {
     return Promise.resolve();
   }
-  if (document.querySelector('script[data-pdfbolt-adsense]')) {
+  if (document.getElementById(ADSENSE_SCRIPT_ID)) {
     return scriptLoadPromise ?? Promise.resolve();
   }
 
   if (!scriptLoadPromise) {
     scriptLoadPromise = new Promise((resolve, reject) => {
       const script = document.createElement('script');
+      script.id = ADSENSE_SCRIPT_ID;
       script.async = true;
-      script.dataset.pdfboltAdsense = 'true';
       script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(client)}`;
       script.crossOrigin = 'anonymous';
       script.onload = () => resolve();

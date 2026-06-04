@@ -21,6 +21,7 @@ export const BOLT_TOOL_IDS = [
   'pdf-to-powerpoint',
   'pdf-to-excel',
   'pdf-to-pdfa',
+  'pdf-to-dxf',
   'replace',
   'rotate-pdf',
   'add-page-numbers',

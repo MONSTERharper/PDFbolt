@@ -7,7 +7,7 @@ export function LegalFaq({ onBack }: { onBack: () => void }) {
       <button
         type="button"
         onClick={onBack}
-        className="flex items-center gap-2 font-mono text-[10px] uppercase font-bold tracking-widest border-b border-[#141414] py-1"
+        className="flex items-center gap-2 font-mono text-xs uppercase font-bold tracking-widest border-b border-[#141414] py-1"
       >
         <ChevronRight size={14} className="rotate-180" /> Back
       </button>

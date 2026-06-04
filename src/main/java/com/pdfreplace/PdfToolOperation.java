@@ -24,6 +24,7 @@ public enum PdfToolOperation {
     PDF_TO_TEXT,
     PDF_TO_CSV,
     PDF_TO_PDFA,
+    PDF_TO_DXF,
     ROTATE_PDF,
     ADD_PAGE_NUMBERS,
     ADD_WATERMARK,
@@ -77,6 +78,7 @@ public enum PdfToolOperation {
             case "pdf-to-text" -> PDF_TO_TEXT;
             case "pdf-to-csv" -> PDF_TO_CSV;
             case "pdf-to-pdfa" -> PDF_TO_PDFA;
+            case "pdf-to-dxf" -> PDF_TO_DXF;
             case "rotate-pdf" -> ROTATE_PDF;
             case "add-page-numbers" -> ADD_PAGE_NUMBERS;
             case "add-watermark" -> ADD_WATERMARK;

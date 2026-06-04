@@ -99,9 +99,9 @@ function AdChrome({
   return (
     <div className={`w-full ${className ?? ''}`}>
       <div className="relative border border-[#141414]/10 bg-white p-3 rounded-xl shadow-xs overflow-hidden">
-        <div className="flex items-center justify-between border-b border-black/5 pb-2 mb-2 text-[9px] font-mono tracking-widest uppercase text-gray-500">
+        <div className="flex items-center justify-between border-b border-black/5 pb-2 mb-2 text-xs font-mono tracking-widest uppercase text-gray-500">
           <div className="flex items-center gap-1.5 font-bold">
-            <span className="text-[8px] bg-black/10 px-1 py-0.5 rounded font-black text-gray-700">
+            <span className="text-xs bg-black/10 px-1 py-0.5 rounded font-black text-gray-700">
               ADVERTISEMENT
             </span>
             <span>{label}</span>
@@ -164,15 +164,15 @@ function PresetAdBody({
             <div className="p-1.5 rounded-md bg-white/60 border border-black/[0.04]">
               <Icon size={12} style={{ color: ad.accentColor }} />
             </div>
-            <span className="font-bold text-[10px] tracking-tight uppercase">{ad.sponsor}</span>
+            <span className="font-bold text-xs tracking-tight uppercase">{ad.sponsor}</span>
           </div>
           <h4 className="font-black text-xs leading-snug">{ad.title}</h4>
-          <p className="text-[10px] opacity-75 font-sans leading-relaxed line-clamp-3">{ad.description}</p>
+          <p className="text-xs opacity-75 font-sans leading-relaxed line-clamp-3">{ad.description}</p>
         </div>
         <button
           type="button"
           onClick={handleCtaClick}
-          className="w-full mt-3 py-2 text-[9px] font-mono font-bold uppercase tracking-widest rounded-md border-2 border-current"
+          className="w-full mt-3 py-2 text-xs font-mono font-bold uppercase tracking-widest rounded-md border-2 border-current"
         >
           {ad.cta}
         </button>
@@ -190,13 +190,13 @@ function PresetAdBody({
         </div>
         <div className="space-y-0.5 min-w-0">
           <h4 className="font-bold text-xs md:text-sm tracking-tight leading-snug">{ad.title}</h4>
-          <p className="text-[11px] opacity-85 font-sans line-clamp-2">{ad.description}</p>
+          <p className="text-sm opacity-85 font-sans line-clamp-2">{ad.description}</p>
         </div>
       </div>
       <button
         type="button"
         onClick={handleCtaClick}
-        className="px-4 py-2 text-[10px] font-mono font-bold uppercase tracking-wider rounded-lg border-2 border-current flex items-center gap-1.5"
+        className="px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider rounded-lg border-2 border-current flex items-center gap-1.5"
       >
         {ad.cta}
         <ExternalLink size={12} />
@@ -208,7 +208,7 @@ function PresetAdBody({
 function AdInfoPanel({ onReport, onClose }: { onReport: () => void; onClose: () => void }) {
   return (
     <div className="py-2 text-xs font-sans space-y-3" role="dialog" aria-labelledby="why-ads-title">
-      <p id="why-ads-title" className="font-bold text-[11px] font-mono uppercase text-[#FF3300]">
+      <p id="why-ads-title" className="font-bold text-sm font-mono uppercase text-[#FF3300]">
         Why am I seeing this?
       </p>
       <p className="leading-tight text-gray-700">
@@ -219,14 +219,14 @@ function AdInfoPanel({ onReport, onClose }: { onReport: () => void; onClose: () 
         <button
           type="button"
           onClick={onReport}
-          className="bg-red-600 text-white rounded px-2.5 py-1 text-[10px] font-mono font-bold hover:bg-red-700"
+          className="bg-red-600 text-white rounded px-2.5 py-1 text-xs font-mono font-bold hover:bg-red-700"
         >
           Report ad
         </button>
         <button
           type="button"
           onClick={onClose}
-          className="bg-black/10 text-gray-900 rounded px-2.5 py-1 text-[10px] font-mono font-bold hover:bg-black/20"
+          className="bg-black/10 text-gray-900 rounded px-2.5 py-1 text-xs font-mono font-bold hover:bg-black/20"
         >
           Go back
         </button>
@@ -268,7 +268,7 @@ export function BannerAd({ className = '', onInquire }: { className?: string; on
       {reported ? (
         <div className="py-4 text-center space-y-2" role="alert">
           <ShieldAlert size={18} className="mx-auto text-orange-500" />
-          <p className="text-[10px] font-mono uppercase font-bold">Feedback received</p>
+          <p className="text-xs font-mono uppercase font-bold">Feedback received</p>
           <p className="text-xs text-gray-600">This ad is hidden for this session.</p>
         </div>
       ) : showInfo ? (
@@ -321,7 +321,7 @@ export function SidebarAd({ className = '', onInquire }: { className?: string; o
       {reported ? (
         <div className="py-6 text-center space-y-2">
           <ShieldAlert size={16} className="mx-auto text-orange-500" />
-          <p className="text-[10px] font-mono uppercase font-bold">Ad hidden</p>
+          <p className="text-xs font-mono uppercase font-bold">Ad hidden</p>
         </div>
       ) : showInfo ? (
         <AdInfoPanel onReport={() => setReported(true)} onClose={() => setShowInfo(false)} />

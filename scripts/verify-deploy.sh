@@ -40,10 +40,10 @@ mvn -q test
 
 log "Backend package"
 mvn -q -DskipTests package
-JAR="${REPO_ROOT}/target/bolt-replacer-1.1.0.jar"
+JAR="${REPO_ROOT}/target/bolt-replacer-1.5.0.jar"
 [[ -f "${JAR}" ]] || fail "Expected ${JAR}"
-unzip -p "${JAR}" pdfbolt-version.properties 2>/dev/null | grep -q 'version=1.1.0' \
-  || fail "JAR pdfbolt-version.properties is not 1.1.0"
+unzip -p "${JAR}" BOOT-INF/classes/pdfbolt-version.properties 2>/dev/null | grep -q 'version=1.5.0' \
+  || fail "JAR pdfbolt-version.properties is not 1.5.0"
 
 log "AdSense endpoints in JAR"
 unzip -p "${JAR}" BOOT-INF/classes/com/pdfreplace/AdsTxtController.class >/dev/null 2>&1 \
@@ -85,8 +85,8 @@ if [[ "${RUN_DOCKER}" == "true" ]]; then
   for i in $(seq 1 60); do
     if curl -fsS "http://127.0.0.1:${SMOKE_PORT}/api/health" 2>/dev/null | grep -q '"ready":true'; then
       log "Health check OK"
-      curl -fsS "http://127.0.0.1:${SMOKE_PORT}/api/health" | grep -q '"version":"1.1.0"' \
-        || fail "Health API version is not 1.1.0"
+      curl -fsS "http://127.0.0.1:${SMOKE_PORT}/api/health" | grep -q '"version":"1.5.0"' \
+        || fail "Health API version is not 1.5.0"
       curl -fsS "http://127.0.0.1:${SMOKE_PORT}/ads.txt" | grep -q 'pub-3054286166063522' \
         || fail "ads.txt missing publisher line"
       curl -fsS "http://127.0.0.1:${SMOKE_PORT}/api/public/ads-config" | grep -q '"enabled":true' \
@@ -102,11 +102,15 @@ if [[ "${RUN_DOCKER}" == "true" ]]; then
 
   docker logs "${CID}" 2>&1 | grep -E 'LibreOffice: OK|Ghostscript: OK' \
     || fail "Container logs missing LibreOffice/Ghostscript OK"
+  docker logs "${CID}" 2>&1 | grep -q 'PDF to DXF: OK' \
+    || fail "Container logs missing PDF to DXF OK (check Python/ezdxf in image)"
+  curl -fsS "http://127.0.0.1:${SMOKE_PORT}/api/health" | grep -q '"pdfToDxf":true' \
+    || fail "Health API pdfToDxf is not true"
 fi
 
 log ""
 log "All checks passed. Deploy with:"
 log "  ./scripts/configure-adsense.sh   # paste AdSense banner slot into .env"
 log "  cp .env.example .env   # edit SMTP_*, JAVA_OPTS"
-log "  docker build -t pdfbolt:1.1.0 -t pdfbolt:latest ."
+log "  docker build -t pdfbolt:1.5.0 -t pdfbolt:latest ."
 log "  docker run -d --restart always --env-file .env -p 8080:8080 --name pdfbolt pdfbolt:latest"

@@ -38,6 +38,7 @@ public class SeoController {
             "pdf-to-powerpoint",
             "pdf-to-excel",
             "pdf-to-pdfa",
+            "pdf-to-dxf",
             "replace",
             "rotate-pdf",
             "add-page-numbers",

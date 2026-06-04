@@ -14,7 +14,7 @@ public class ContactService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${boltreplacer.contact.to-email:sarveshthapa007@gmail.com}")
+    @Value("${boltreplacer.contact.to-email:}")
     private String contactEmail;
 
     @Value("${boltreplacer.contact.from-email:}")
@@ -42,7 +42,7 @@ public class ContactService {
 
         if (contactLogOnly) {
             log.info(
-                    "[PDFBolt contact, log-only] to={} reply-to={} subject={}\n{}",
+                    "[PDFbolt contact, log-only] to={} reply-to={} subject={}\n{}",
                     contactEmail,
                     request.email().trim(),
                     request.subject().trim(),
@@ -57,13 +57,19 @@ public class ContactService {
             );
         }
 
+        if (contactEmail == null || contactEmail.isBlank()) {
+            throw new IllegalStateException(
+                    "Contact form is temporarily unavailable. Please email us using the address on this page."
+            );
+        }
+
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(contactEmail);
         if (fromEmail != null && !fromEmail.isBlank()) {
             message.setFrom(fromEmail);
         }
         message.setReplyTo(request.email().trim());
-        message.setSubject("[PDFBolt Inquiry] " + request.subject().trim());
+        message.setSubject("[PDFbolt Inquiry] " + request.subject().trim());
         message.setText(body);
         try {
             mailSender.send(message);

@@ -97,6 +97,15 @@ class PdfToolsEngineTest {
         Files.write(sig, PdfTestSupport.minimalPngBytes());
         byte[] signed = PdfToolsEngine.sign(pdf, sig, 1, 50, 50, 100, 40);
         PdfTestSupport.assertPdfMagic(signed);
+
+        Path sig2 = tempDir.resolve("sig2.png");
+        Files.write(sig2, PdfTestSupport.minimalPngBytes());
+        byte[] signedTwice = PdfToolsEngine.sign(
+                pdf,
+                List.of(
+                        new PdfToolsEngine.SignatureStamp(sig, 1, 50, 50, 100, 40),
+                        new PdfToolsEngine.SignatureStamp(sig2, 1, 200, 50, 100, 40)));
+        PdfTestSupport.assertPdfMagic(signedTwice);
     }
 
     @Test
@@ -126,6 +135,18 @@ class PdfToolsEngineTest {
 
         byte[] redacted = PdfToolsEngine.redact(input, 1, 50, 50, 120, 40);
         PdfTestSupport.assertPdfMagic(redacted);
+    }
+
+    @Test
+    void processPdfFormsCanSkipFlattening() throws Exception {
+        Path input = tempDir.resolve("forms.pdf");
+        PdfTestSupport.createPdfWithText(input, "Form");
+
+        byte[] passthrough = PdfToolsEngine.processPdfForms(input, false);
+        PdfTestSupport.assertPdfMagic(passthrough);
+
+        byte[] flattened = PdfToolsEngine.processPdfForms(input, true);
+        PdfTestSupport.assertPdfMagic(flattened);
     }
 
     @Test

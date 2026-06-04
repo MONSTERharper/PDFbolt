@@ -68,8 +68,8 @@ export async function postReplaceBatch(params: {
     response = await fetch('/api/replace', { method: 'POST', body: data });
   } catch (err) {
     const hint = import.meta.env.DEV
-      ? 'Could not reach PDFBolt at /api/replace. Start the Java backend (mvn spring-boot:run) and open http://localhost:8080/.'
-      : 'Could not reach PDFBolt. Check your connection and try again.';
+      ? 'Could not reach PDFbolt at /api/replace. Start the Java backend (mvn spring-boot:run) and open http://localhost:8080/.'
+      : 'Could not reach PDFbolt. Check your connection and try again.';
     if (err instanceof TypeError) {
       throw new Error(hint);
     }

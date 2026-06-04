@@ -50,7 +50,7 @@ export function EncryptedPdfBanner({
       </div>
       {fileEntries.map((entry) => (
         <label key={entry.name} className="block space-y-1">
-          <span className="text-[10px] font-mono uppercase text-gray-700 font-bold">
+          <span className="text-xs font-mono uppercase text-gray-700 font-bold">
             Password for {entry.name}
           </span>
           <input
@@ -64,12 +64,12 @@ export function EncryptedPdfBanner({
         </label>
       ))}
       {verifying && (
-        <p className="text-[10px] font-mono text-gray-600">Checking password…</p>
+        <p className="text-xs font-mono text-gray-600">Checking password…</p>
       )}
       {verified && !verifying && fileEntries.length > 0 && (
-        <p className="text-[10px] font-mono text-emerald-800">Password(s) accepted for uploaded PDF(s).</p>
+        <p className="text-xs font-mono text-emerald-800">Password(s) accepted for uploaded PDF(s).</p>
       )}
-      {error && <p className="text-[10px] font-mono text-red-800">{error}</p>}
+      {error && <p className="text-xs font-mono text-red-800">{error}</p>}
     </div>
   );
 }

@@ -27,13 +27,13 @@ function activateTool(toolKey, status) {
   toolItems.forEach((item) => item.classList.remove("active"));
   const active = toolItems.find((item) => item.dataset.tool === toolKey);
   if (active) active.classList.add("active");
-  toolInfoTitle.textContent = `PDFBolt ${toolKey.charAt(0).toUpperCase()}${toolKey.slice(1)}`;
+  toolInfoTitle.textContent = `PDFbolt ${toolKey.charAt(0).toUpperCase()}${toolKey.slice(1)}`;
   toolInfoText.textContent = toolDescriptions[toolKey] || "This tool is in progress.";
   if (status === "live") {
     replacePanel.hidden = false;
   } else {
     replacePanel.hidden = true;
-    statusEl.textContent = `PDFBolt ${toolKey} is coming soon.`;
+    statusEl.textContent = `PDFbolt ${toolKey} is coming soon.`;
     statusEl.className = "status";
   }
 }

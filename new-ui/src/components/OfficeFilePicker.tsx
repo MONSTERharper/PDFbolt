@@ -45,7 +45,7 @@ export function OfficeFilePicker({
         <span className="text-xs font-mono text-gray-700 truncate" aria-live="polite">
           {file ? file.name : label}
         </span>
-        <span className="shrink-0 bg-[#FF3300] px-3 py-1.5 text-[10px] font-mono font-bold uppercase text-white">
+        <span className="shrink-0 bg-[#FF3300] px-3 py-1.5 text-xs font-mono font-bold uppercase text-white">
           {file ? 'Change' : 'Browse'}
         </span>
         <input

@@ -204,6 +204,15 @@ describe('serverExecuteTool', () => {
     await expect(serverExecuteTool('sign-pdf', ctx)).rejects.toThrow('signature');
   });
 
+  it('pdf-forms sends formsFlatten flag', async () => {
+    const ctx = emptyServerToolContext();
+    ctx.file = mockPdfFile();
+    ctx.formsFlatten = false;
+    await serverExecuteTool('pdf-forms', ctx);
+    const entries = formDataEntries(postPdfTool.mock.calls.at(-1)?.[0] as FormData);
+    expect(entries.formsFlatten).toEqual(['false']);
+  });
+
   it('merge sends all pdfs under files field in order', async () => {
     const ctx = emptyServerToolContext();
     ctx.extraFiles = [mockPdfFile('first.pdf'), mockPdfFile('second.pdf')];

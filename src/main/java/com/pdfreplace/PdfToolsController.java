@@ -31,6 +31,7 @@ public class PdfToolsController {
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam(value = "files", required = false) MultipartFile[] files,
             @RequestParam(value = "signature", required = false) MultipartFile signature,
+            @RequestParam(value = "signatures", required = false) MultipartFile[] signatures,
             @RequestParam(value = "pageRange", required = false) String pageRange,
             @RequestParam(value = "pageOrder", required = false) String pageOrder,
             @RequestParam(value = "pdfPassword", required = false) String pdfPassword,
@@ -66,11 +67,13 @@ public class PdfToolsController {
             @RequestParam(value = "sigY", required = false) Float sigY,
             @RequestParam(value = "sigWidth", required = false) Float sigWidth,
             @RequestParam(value = "sigHeight", required = false) Float sigHeight,
+            @RequestParam(value = "signaturesJson", required = false) String signaturesJson,
             @RequestParam(value = "redactPage", required = false) Integer redactPage,
             @RequestParam(value = "redactX", required = false) Float redactX,
             @RequestParam(value = "redactY", required = false) Float redactY,
             @RequestParam(value = "redactWidth", required = false) Float redactWidth,
-            @RequestParam(value = "redactHeight", required = false) Float redactHeight
+            @RequestParam(value = "redactHeight", required = false) Float redactHeight,
+            @RequestParam(value = "formsFlatten", required = false) Boolean formsFlatten
     ) throws Exception {
         MultipartFile[] mergedFiles = mergeFiles(file, files);
         PdfToolsService.ToolParams params = PdfToolsService.ToolParams.fromRequest(
@@ -109,11 +112,13 @@ public class PdfToolsController {
                 sigY,
                 sigWidth,
                 sigHeight,
+                signaturesJson,
                 redactPage,
                 redactX,
                 redactY,
                 redactWidth,
-                redactHeight
+                redactHeight,
+                formsFlatten
         );
 
         PdfToolsService.ToolOutput output = toolsService.execute(
@@ -121,6 +126,7 @@ public class PdfToolsController {
                 file,
                 mergedFiles,
                 signature,
+                signatures,
                 params
         );
         toolUsageService.record(operation);

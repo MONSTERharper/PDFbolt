@@ -75,7 +75,7 @@ describe('postCompress', () => {
     });
     await expect(
       postCompress({ files: [mockPdfFile()], level: 'high', retainMetadata: false }),
-    ).rejects.toThrow(/Could not reach PDFBolt/);
+    ).rejects.toThrow(/Could not reach PDFbolt/);
   });
 
   it('surfaces json error message from server', async () => {

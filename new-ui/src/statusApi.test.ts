@@ -9,8 +9,8 @@ describe('fetchHealth', () => {
   it('returns parsed health JSON', async () => {
     const payload = {
       status: 'ok',
-      version: '1.1.0',
-      suite: 'PDFBolt',
+      version: '1.5.0',
+      suite: 'PDFbolt',
       tool: 'bolt-replacer',
       timestamp: '2026-01-01T00:00:00Z',
       dependencies: {

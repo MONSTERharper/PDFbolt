@@ -211,8 +211,8 @@ final class PdfToolsEngine {
 
     static byte[] pdfToPdfa(Path input) throws IOException {
         try (PDDocument doc = PDDocument.load(input.toFile())) {
-            doc.getDocumentInformation().setProducer("PDFBolt PDF/A preparation");
-            doc.getDocumentInformation().setCreator("PDFBolt");
+            doc.getDocumentInformation().setProducer("PDFbolt PDF/A preparation");
+            doc.getDocumentInformation().setCreator("PDFbolt");
             return save(doc);
         }
     }
@@ -328,11 +328,13 @@ final class PdfToolsEngine {
         }
     }
 
-    static byte[] flattenForms(Path input) throws IOException {
+    static byte[] processPdfForms(Path input, boolean flatten) throws IOException {
         try (PDDocument doc = PDDocument.load(input.toFile())) {
-            PDAcroForm form = doc.getDocumentCatalog().getAcroForm();
-            if (form != null) {
-                form.flatten();
+            if (flatten) {
+                PDAcroForm form = doc.getDocumentCatalog().getAcroForm();
+                if (form != null) {
+                    form.flatten();
+                }
             }
             return save(doc);
         }
@@ -369,17 +371,31 @@ final class PdfToolsEngine {
             float width,
             float height
     ) throws IOException {
+        return sign(input, List.of(new SignatureStamp(signaturePng, pageNum, x, y, width, height)));
+    }
+
+    record SignatureStamp(Path signaturePng, int pageNum, float x, float y, float width, float height) {}
+
+    static byte[] sign(Path input, List<SignatureStamp> stamps) throws IOException {
+        if (stamps == null || stamps.isEmpty()) {
+            throw new IllegalArgumentException("At least one signature is required.");
+        }
         try (PDDocument doc = PDDocument.load(input.toFile())) {
-            int index = Math.max(0, Math.min(pageNum - 1, doc.getNumberOfPages() - 1));
-            BufferedImage buffered = ImageIO.read(signaturePng.toFile());
-            if (buffered == null) {
-                throw new IllegalArgumentException("Invalid signature image.");
-            }
-            PDImageXObject image = LosslessFactory.createFromImage(doc, buffered);
-            PDPage page = doc.getPage(index);
-            try (PDPageContentStream cs = new PDPageContentStream(
-                    doc, page, PDPageContentStream.AppendMode.APPEND, true, true)) {
-                cs.drawImage(image, x, y, width, height);
+            for (SignatureStamp stamp : stamps) {
+                if (stamp.width() <= 0 || stamp.height() <= 0) {
+                    throw new IllegalArgumentException("Signature width and height must be greater than zero.");
+                }
+                int index = Math.max(0, Math.min(stamp.pageNum() - 1, doc.getNumberOfPages() - 1));
+                BufferedImage buffered = ImageIO.read(stamp.signaturePng().toFile());
+                if (buffered == null) {
+                    throw new IllegalArgumentException("Invalid signature image.");
+                }
+                PDImageXObject image = LosslessFactory.createFromImage(doc, buffered);
+                PDPage page = doc.getPage(index);
+                try (PDPageContentStream cs = new PDPageContentStream(
+                        doc, page, PDPageContentStream.AppendMode.APPEND, true, true)) {
+                    cs.drawImage(image, stamp.x(), stamp.y(), stamp.width(), stamp.height());
+                }
             }
             return save(doc);
         }

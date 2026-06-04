@@ -10,7 +10,7 @@ import {
 const STEPS = [
   { title: 'Pick a tool', body: 'Choose a tool below or browse the full list.' },
   { title: 'Upload your file', body: 'Select your PDF, images, or Office file. Limits appear under the upload area.' },
-  { title: 'Download the result', body: 'Click Run, wait a moment, and save the file. We do not keep your upload afterward.' },
+  { title: 'Download the result', body: 'Your file downloads automatically. Some tools let you set options before running. We do not keep your upload afterward.' },
 ] as const;
 
 /** Same shortcuts as the home “Most popular” defaults. */
@@ -76,11 +76,11 @@ export function OnboardingBanner({ quickTools, onOpenTool }: OnboardingBannerPro
       >
         <X size={18} />
       </button>
-      <p className="text-[10px] font-mono uppercase tracking-widest text-[#FF3300] font-bold mb-1 pr-8">
+      <p className="text-xs font-mono uppercase tracking-widest text-[#FF3300] font-bold mb-1 pr-8">
         Getting started
       </p>
       {remaining > 0 && remaining < ONBOARDING_MAX_DISMISSALS && (
-        <p className="text-[9px] font-mono text-gray-500 mb-3">
+        <p className="text-xs font-mono text-gray-500 mb-3">
           Tip {ONBOARDING_MAX_DISMISSALS - remaining + 1} of {ONBOARDING_MAX_DISMISSALS} — dismiss with Got it or ✕
         </p>
       )}
@@ -104,7 +104,7 @@ export function OnboardingBanner({ quickTools, onOpenTool }: OnboardingBannerPro
 
       {toolCount > 0 && (
         <div className="space-y-2">
-          <p className="text-[10px] font-mono uppercase tracking-widest text-gray-600 font-bold">
+          <p className="text-xs font-mono uppercase tracking-widest text-gray-600 font-bold">
             Jump to a tool
           </p>
           <div
@@ -120,8 +120,8 @@ export function OnboardingBanner({ quickTools, onOpenTool }: OnboardingBannerPro
                 onClick={() => openTool(tool.id)}
                 className="min-h-[2.75rem] px-3 py-2 rounded-lg border border-[#141414]/15 bg-white hover:border-[#FF3300] hover:bg-[#FF3300]/[0.06] text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3300] focus-visible:ring-offset-1"
               >
-                <span className="block font-bold text-[11px] text-[#141414] truncate">{tool.cleanName}</span>
-                <span className="block text-[9px] font-mono text-gray-500 truncate mt-0.5 uppercase tracking-wide">
+                <span className="block font-bold text-sm text-[#141414] truncate">{tool.cleanName}</span>
+                <span className="block text-xs font-mono text-gray-500 truncate mt-0.5 uppercase tracking-wide">
                   {tool.name}
                 </span>
               </button>
@@ -133,7 +133,7 @@ export function OnboardingBanner({ quickTools, onOpenTool }: OnboardingBannerPro
       <button
         type="button"
         onClick={close}
-        className="mt-5 w-full sm:w-auto bg-[#141414] text-white px-6 py-2.5 font-mono text-[10px] uppercase font-bold tracking-wider hover:bg-[#FF3300] transition-colors flex items-center justify-center gap-1"
+        className="mt-5 w-full sm:w-auto bg-[#141414] text-white px-6 py-2.5 font-mono text-xs uppercase font-bold tracking-wider hover:bg-[#FF3300] transition-colors flex items-center justify-center gap-1"
       >
         Got it
         <ChevronRight size={14} />

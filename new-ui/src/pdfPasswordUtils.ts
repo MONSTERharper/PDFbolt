@@ -15,9 +15,12 @@ export function buildPdfPasswordsJson(
 }
 
 export function passwordForFile(
-  file: File,
+  file: File | null | undefined,
   passwordsByFile: Record<string, string>,
 ): string | undefined {
+  if (!file) {
+    return undefined;
+  }
   const password = passwordsByFile[file.name]?.trim();
   return password || undefined;
 }

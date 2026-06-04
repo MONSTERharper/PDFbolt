@@ -437,21 +437,55 @@ export async function protectPdfFile(file: File, userPass: string, ownerPass: st
 export async function signPdfFile(
   file: File, 
   sigImageBytes: Uint8Array, 
-  options: { pageNum: number; x: number; y: number; width: number; height: number }
+  options: { pageNum: number; x: number; y: number; width: number; height: number },
+  pdfPassword?: string,
 ): Promise<Uint8Array> {
-  const arrayBuffer = await file.arrayBuffer();
-  const doc = await PDFDocument.load(new Uint8Array(arrayBuffer));
-  const pages = doc.getPages();
-  const index = Math.max(0, Math.min(options.pageNum - 1, pages.length - 1));
-  const targetPage = pages[index];
+  return signPdfMultiple(
+    file,
+    [{ sigImageBytes, ...options }],
+    pdfPassword,
+  );
+}
 
-  const sigImage = await doc.embedPng(sigImageBytes);
-  targetPage.drawImage(sigImage, {
-    x: options.x,
-    y: options.y,
-    width: options.width,
-    height: options.height
-  });
+export async function signPdfMultiple(
+  file: File,
+  signatures: {
+    sigImageBytes: Uint8Array;
+    pageNum: number;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }[],
+  pdfPassword?: string,
+): Promise<Uint8Array> {
+  if (signatures.length === 0) {
+    throw new Error('Draw at least one signature on the PDF.');
+  }
+  const arrayBuffer = await file.arrayBuffer();
+  const password = pdfPassword?.trim();
+  let doc;
+  try {
+    doc = await PDFDocument.load(new Uint8Array(arrayBuffer), password ? { password } : undefined);
+  } catch (err) {
+    throw friendlyPdfPasswordError(err);
+  }
+  const pages = doc.getPages();
+
+  for (const signature of signatures) {
+    if (signature.width <= 0 || signature.height <= 0) {
+      continue;
+    }
+    const index = Math.max(0, Math.min(signature.pageNum - 1, pages.length - 1));
+    const targetPage = pages[index];
+    const sigImage = await doc.embedPng(signature.sigImageBytes);
+    targetPage.drawImage(sigImage, {
+      x: signature.x,
+      y: signature.y,
+      width: signature.width,
+      height: signature.height,
+    });
+  }
 
   return await doc.save();
 }

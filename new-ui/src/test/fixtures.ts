@@ -19,6 +19,7 @@ export function emptyServerToolContext(): import('../backendBridge').ServerToolC
     extraFiles: [],
     compareFile2: null,
     signatureBlob: null,
+    signatures: [],
     splitRange: '1',
     deletePageStr: '2',
     extractPageStr: '1',
@@ -55,5 +56,6 @@ export function emptyServerToolContext(): import('../backendBridge').ServerToolC
     sigW: 100,
     sigH: 40,
     jpgDpi: '150 DPI',
+    formsFlatten: true,
   };
 }

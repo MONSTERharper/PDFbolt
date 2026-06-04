@@ -14,15 +14,18 @@ import java.util.Map;
 public class HealthController {
     private final LibreOfficeConverter libreOffice;
     private final GhostscriptConverter ghostscript;
+    private final PdfToDxfConverter pdfToDxf;
     private final boolean pdfaValidate;
 
     public HealthController(
             LibreOfficeConverter libreOffice,
             GhostscriptConverter ghostscript,
+            PdfToDxfConverter pdfToDxf,
             @Value("${boltreplacer.pdfa.validate:true}") boolean pdfaValidate
     ) {
         this.libreOffice = libreOffice;
         this.ghostscript = ghostscript;
+        this.pdfToDxf = pdfToDxf;
         this.pdfaValidate = pdfaValidate;
     }
 
@@ -31,7 +34,7 @@ public class HealthController {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("status", "ok");
         body.put("version", PdfBoltVersion.get());
-        body.put("suite", "PDFBolt");
+        body.put("suite", "PDFbolt");
         body.put("tool", "bolt-replace");
         body.put("timestamp", Instant.now().toString());
         body.put("dependencies", dependencyStatus());
@@ -49,6 +52,7 @@ public class HealthController {
         deps.put("verapdf", verapdfOk);
         deps.put("pdfaValidationEnabled", pdfaValidate);
         deps.put("heic", HeicSupport.isAvailable());
+        deps.put("pdfToDxf", pdfToDxf.isAvailable());
         deps.put("ready", libreOfficeOk && ghostscriptOk);
         return deps;
     }

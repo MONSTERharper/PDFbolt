@@ -20,7 +20,7 @@ export function SiteFooter({
   const showMismatch = versionMismatch && !import.meta.env.PROD;
 
   return (
-    <footer className="border-t border-[#141414] bg-[#141414] text-[#E4E3E0]/70 font-sans text-[10px] px-6 py-4">
+    <footer className="border-t border-[#141414] bg-[#141414] text-[#E4E3E0]/70 font-sans text-sm px-6 py-4">
       <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <nav className="flex flex-wrap gap-x-4 gap-y-1 uppercase tracking-wide font-mono" aria-label="Footer">
           <button type="button" onClick={() => onNavigate('/', 'dashboard')} className="hover:text-white">
@@ -48,8 +48,8 @@ export function SiteFooter({
             Terms
           </button>
         </nav>
-        <div className="flex flex-col sm:items-end gap-0.5 font-mono text-[9px] uppercase tracking-widest text-[#E4E3E0]/50">
-          <span>PDFbolt © {new Date().getFullYear()} · v{formatBoltVersion(displayVersion)}</span>
+        <div className="flex flex-col sm:items-end gap-0.5 font-mono text-xs uppercase tracking-widest text-[#E4E3E0]/50">
+          <span>PDFbolt © {new Date().getFullYear()} · {formatBoltVersion(displayVersion)}</span>
           {showMismatch && (
             <span className="text-amber-400 normal-case tracking-normal" title={`UI build ${buildVersion}`}>
               Dev: UI/API version mismatch

@@ -17,8 +17,7 @@ RUN mvn -q -DskipTests package
 FROM eclipse-temurin:17-jre
 WORKDIR /app
 
-# PDFbolt runtime: LibreOffice (Office/HTML→PDF), Ghostscript (PDF/A), fonts (replace/compress).
-# veraPDF is installed on amd64 for optional ISO validation (pdf-to-pdfa).
+# PDFbolt runtime: LibreOffice, Ghostscript, Python/ezdxf (pdf-to-dxf), fonts, veraPDF (amd64).
 ARG TARGETARCH=amd64
 ARG VERAPDF_VERSION=1.28.2
 
@@ -40,8 +39,14 @@ RUN apt-get update \
     ghostscript \
     imagemagick \
     libheif1 \
+    python3 \
+    python3-pip \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /tmp/.config /tmp/.cache
+
+COPY scripts/pdf_to_dxf.py scripts/requirements-dxf.txt /app/scripts/
+RUN pip3 install --no-cache-dir --break-system-packages -r /app/scripts/requirements-dxf.txt \
+    && chmod +x /app/scripts/pdf_to_dxf.py
 
 # veraPDF greenfield (amd64 only — arm64 images still convert PDF/A via Ghostscript)
 COPY scripts/install-verapdf.sh scripts/verapdf-auto-install.xml /tmp/
@@ -56,8 +61,10 @@ ENV LIBREOFFICE_COMMAND=soffice
 ENV GHOSTSCRIPT_COMMAND=gs
 ENV VERAPDF_COMMAND=verapdf
 ENV PDFA_VALIDATE=true
+ENV PDF_DXF_PYTHON=python3
+ENV PDF_DXF_SCRIPT=/app/scripts/pdf_to_dxf.py
 
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /app/target/bolt-replacer-*.jar app.jar
 COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 COPY scripts/docker-healthcheck.sh /usr/local/bin/docker-healthcheck.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh /usr/local/bin/docker-healthcheck.sh

@@ -90,11 +90,23 @@ export { postContactInquiry };
 export { formatBytesHint, COMPRESS_LEVEL_OPTIONS, compressLevelHoverHint };
 export type { PdfToolResult };
 
+export interface SignatureEntry {
+  blob: Blob;
+  placement: {
+    pageNum: number;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  };
+}
+
 export interface ServerToolContext {
   file: File | null;
   extraFiles: File[];
   compareFile2: File | null;
   signatureBlob: Blob | null;
+  signatures: SignatureEntry[];
   splitRange: string;
   deletePageStr: string;
   extractPageStr: string;
@@ -132,6 +144,7 @@ export interface ServerToolContext {
   sigW: number;
   sigH: number;
   jpgDpi: string;
+  formsFlatten: boolean;
 }
 
 const OFFICE_FILE_TOOLS = new Set(['word-to-pdf', 'powerpoint-to-pdf', 'excel-to-pdf']);
@@ -253,15 +266,53 @@ export async function serverExecuteTool(toolId: string, ctx: ServerToolContext):
     form.append('ownerPassword', ctx.protectPass);
   }
   if (toolId === 'sign-pdf') {
-    if (!ctx.signatureBlob || ctx.signatureBlob.size < 80) {
+    const signatureEntries =
+      ctx.signatures.length > 0
+        ? ctx.signatures
+        : ctx.signatureBlob
+          ? [
+              {
+                blob: ctx.signatureBlob,
+                placement: {
+                  pageNum: ctx.sigPageNum,
+                  x: ctx.sigX,
+                  y: ctx.sigY,
+                  w: ctx.sigW,
+                  h: ctx.sigH,
+                },
+              },
+            ]
+          : [];
+    if (signatureEntries.length === 0 || signatureEntries.some((entry) => entry.blob.size < 80)) {
       throw new Error('Draw a signature on the canvas before signing.');
     }
-    form.append('signature', ctx.signatureBlob, 'signature.png');
-    form.append('sigPage', String(ctx.sigPageNum));
-    form.append('sigX', String(ctx.sigX));
-    form.append('sigY', String(ctx.sigY));
-    form.append('sigWidth', String(ctx.sigW));
-    form.append('sigHeight', String(ctx.sigH));
+    if (signatureEntries.length === 1 && ctx.signatures.length === 0) {
+      form.append('signature', signatureEntries[0].blob, 'signature.png');
+      form.append('sigPage', String(signatureEntries[0].placement.pageNum));
+      form.append('sigX', String(signatureEntries[0].placement.x));
+      form.append('sigY', String(signatureEntries[0].placement.y));
+      form.append('sigWidth', String(signatureEntries[0].placement.w));
+      form.append('sigHeight', String(signatureEntries[0].placement.h));
+    } else {
+      form.append(
+        'signaturesJson',
+        JSON.stringify(
+          signatureEntries.map((entry) => ({
+            pageNum: entry.placement.pageNum,
+            x: entry.placement.x,
+            y: entry.placement.y,
+            width: entry.placement.w,
+            height: entry.placement.h,
+          })),
+        ),
+      );
+      signatureEntries.forEach((entry, index) => {
+        form.append('signatures', entry.blob, `signature-${index}.png`);
+      });
+    }
+  }
+  if (toolId === 'pdf-forms') {
+    form.append('formsFlatten', String(ctx.formsFlatten));
   }
   return postPdfTool(form);
 }
