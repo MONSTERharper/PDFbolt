@@ -130,6 +130,10 @@ public class ToolUsageService {
         if (raw == null || raw.isBlank()) {
             return null;
         }
-        return raw.trim().toLowerCase(Locale.ROOT).replace('_', '-');
+        String normalized = raw.trim().toLowerCase(Locale.ROOT).replace('_', '-');
+        if ("jpg-to-pdf".equals(normalized)) {
+            return "images-to-pdf";
+        }
+        return normalized;
     }
 }

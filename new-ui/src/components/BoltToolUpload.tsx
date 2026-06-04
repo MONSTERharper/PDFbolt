@@ -8,6 +8,8 @@ import { boltToolName, boltUploadHeading, boltUploadHint } from '../toolLabels';
 import { HtmlFilePicker } from './HtmlFilePicker';
 import { getToolUploadKind, type HtmlInputMode } from '../toolUploadConfig';
 import { isPdfFile } from '../pdfFileUtils';
+import { UploadLimitsNote } from './UploadLimitsNote';
+import { useSiteConfig } from '../useSiteConfig';
 
 export interface BoltToolUploadProps {
   toolId: string;
@@ -38,6 +40,7 @@ function UploadShell({
   children: React.ReactNode;
   feedback: BoltToolUploadProps['feedback'];
 }) {
+  const site = useSiteConfig();
   return (
     <div className="lg:col-span-12 bg-gray-50 border border-gray-200 rounded-xl p-4 md:p-6 space-y-3 relative z-20">
       <div className="flex items-center justify-between">
@@ -47,6 +50,7 @@ function UploadShell({
         <span className="text-[8px] font-mono text-gray-500">{boltUploadHint(toolId)}</span>
       </div>
       {children}
+      <UploadLimitsNote limits={site.limits} toolId={toolId} />
       {feedback && (
         <p
           role="status"

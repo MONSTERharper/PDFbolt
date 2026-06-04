@@ -1,3 +1,5 @@
+import { friendlyErrorMessage } from './friendlyError';
+
 export type CompressLevel = 'high' | 'balanced' | 'strong';
 
 export const COMPRESS_LEVEL_OPTIONS: {
@@ -118,10 +120,9 @@ export async function postCompress(params: {
   try {
     response = await fetch('/api/compress', { method: 'POST', body: data });
   } catch (err) {
-    const hint =
-      'Could not reach the PDF engine at /api/compress. ' +
-      'Start the Java backend on port 8080 (mvn spring-boot:run or docker compose up --build), ' +
-      'then open http://localhost:8080/compress or run "npm run dev" in new-ui/.';
+    const hint = import.meta.env.DEV
+      ? 'Could not reach PDFBolt at /api/compress. Start the Java backend (mvn spring-boot:run) and open http://localhost:8080/.'
+      : 'Could not reach PDFBolt. Check your connection and try again.';
     if (err instanceof TypeError) {
       throw new Error(hint);
     }
@@ -138,7 +139,7 @@ export async function postCompress(params: {
           payload.message ||
           'This PDF is password-protected. Enter the document password to continue.';
       } else {
-        message = payload.message || message;
+        message = friendlyErrorMessage(payload.message || message);
       }
     } else {
       const text = await response.text();

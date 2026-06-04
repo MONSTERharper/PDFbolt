@@ -6,6 +6,7 @@ describe('toolUploadConfig', () => {
     expect(getToolUploadKind('merge')).toBe('multi-pdf');
     expect(getToolUploadKind('split')).toBe('single-pdf');
     expect(getToolUploadKind('compare-pdf')).toBe('dual-pdf');
+    expect(getToolUploadKind('images-to-pdf')).toBe('multi-image');
     expect(getToolUploadKind('jpg-to-pdf')).toBe('multi-image');
     expect(getToolUploadKind('word-to-pdf')).toBe('office-file');
     expect(getToolUploadKind('html-to-pdf')).toBe('html-content');

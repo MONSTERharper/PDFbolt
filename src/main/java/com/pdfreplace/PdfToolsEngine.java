@@ -99,10 +99,7 @@ final class PdfToolsEngine {
     static byte[] imagesToPdf(List<Path> images) throws IOException {
         try (PDDocument doc = new PDDocument()) {
             for (Path imagePath : images) {
-                BufferedImage buffered = ImageIO.read(imagePath.toFile());
-                if (buffered == null) {
-                    throw new IllegalArgumentException("Could not read image: " + imagePath.getFileName());
-                }
+                BufferedImage buffered = RasterImageLoader.read(imagePath);
                 PDImageXObject image = LosslessFactory.createFromImage(doc, buffered);
                 PDPage page = new PDPage(new PDRectangle(image.getWidth(), image.getHeight()));
                 doc.addPage(page);

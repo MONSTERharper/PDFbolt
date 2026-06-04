@@ -16,7 +16,7 @@ const LIVE_TOOLS = [
   'sign-pdf',
   'redact-pdf',
   'pdf-to-jpg',
-  'jpg-to-pdf',
+  'images-to-pdf',
   'word-to-pdf',
   'powerpoint-to-pdf',
   'excel-to-pdf',

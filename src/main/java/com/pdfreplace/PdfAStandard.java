@@ -8,31 +8,40 @@ public enum PdfAStandard {
     PDF_A_3B(3, "3b");
 
     private final int ghostscriptLevel;
-    private final String conformance;
+    private final String verapdfFlavour;
 
-    PdfAStandard(int ghostscriptLevel, String conformance) {
+    PdfAStandard(int ghostscriptLevel, String verapdfFlavour) {
         this.ghostscriptLevel = ghostscriptLevel;
-        this.conformance = conformance;
+        this.verapdfFlavour = verapdfFlavour;
     }
 
     public int ghostscriptLevel() {
         return ghostscriptLevel;
     }
 
-    public String conformance() {
-        return conformance;
+    /** veraPDF {@code --flavour} argument ({@code 1b}, {@code 2b}, {@code 3b}). */
+    public String verapdfFlavour() {
+        return verapdfFlavour;
     }
 
+    /** @deprecated use {@link #verapdfFlavour()} */
+    public String conformance() {
+        return verapdfFlavour;
+    }
+
+    /**
+     * Parses UI labels such as {@code PDF/A-2b (ISO 19005-2)} without matching ISO revision digits in 1b strings.
+     */
     public static PdfAStandard parse(String raw) {
         if (raw == null || raw.isBlank()) {
             return PDF_A_1B;
         }
         String normalized = raw.trim().toLowerCase(Locale.ROOT);
-        if (normalized.contains("2")) {
-            return PDF_A_2B;
-        }
-        if (normalized.contains("3")) {
+        if (normalized.contains("pdf/a-3") || normalized.contains("pdf/a3") || normalized.contains("19005-3")) {
             return PDF_A_3B;
+        }
+        if (normalized.contains("pdf/a-2") || normalized.contains("pdf/a2") || normalized.contains("19005-2")) {
+            return PDF_A_2B;
         }
         return PDF_A_1B;
     }

@@ -26,9 +26,9 @@ const AD_PRESETS: AdPreset[] = [
   {
     id: 'pdf-bolt-sponsor',
     sponsor: 'Sponsor PDFbolt',
-    title: 'Acquire This Dedicated Developer Placement',
+    title: 'Advertise on PDFbolt',
     description:
-      'Reach technical authors and document designers searching for secure PDF utilities daily.',
+      'Reach people who use PDF tools every day for work and personal projects.',
     cta: 'Inquire Ad Placement',
     link: '#contact',
     badge: 'SPONSOR SLOT AVAILABLE',

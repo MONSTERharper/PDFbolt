@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.mail.MailException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -15,7 +16,8 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-@RestControllerAdvice
+/** JSON errors for API controllers only — page routes use default HTML errors. */
+@RestControllerAdvice(annotations = RestController.class)
 public class WebExceptionHandler {
     @ExceptionHandler(PdfPasswordRequiredException.class)
     public ResponseEntity<Map<String, Object>> pdfPasswordRequired(PdfPasswordRequiredException exception) {
@@ -47,14 +49,18 @@ public class WebExceptionHandler {
 
     @ExceptionHandler(RateLimitExceededException.class)
     public ResponseEntity<Map<String, Object>> rateLimited(RateLimitExceededException exception) {
-        return json(HttpStatus.TOO_MANY_REQUESTS, "rate_limited", exception.getMessage());
+        return json(
+                HttpStatus.TOO_MANY_REQUESTS,
+                "rate_limited",
+                "Too many requests. Please wait a minute and try again."
+        );
     }
 
     @ExceptionHandler(IOException.class)
     public ResponseEntity<Map<String, Object>> processingError(IOException exception) {
         String detail = exception.getMessage();
         if (detail == null || detail.isBlank()) {
-            detail = "PDF processing failed. Check server logs and try exporting the PDF without subset-only embedding.";
+            detail = "PDF processing failed. Try a different file or a simpler PDF.";
         }
         return json(HttpStatus.UNPROCESSABLE_ENTITY, "processing_error", detail);
     }
@@ -64,7 +70,7 @@ public class WebExceptionHandler {
         return json(
                 HttpStatus.BAD_GATEWAY,
                 "mail_error",
-                "Unable to deliver inquiry email. Verify SMTP credentials and sender configuration."
+                "We could not send your message right now. Please try again later or email us directly."
         );
     }
 

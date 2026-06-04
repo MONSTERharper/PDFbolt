@@ -147,7 +147,7 @@ describe('serverExecuteTool', () => {
     { id: 'remove-pages', setup: (ctx) => { ctx.file = mockPdfFile(); } },
     { id: 'extract-pages', setup: (ctx) => { ctx.file = mockPdfFile(); } },
     { id: 'organize-pdf', setup: (ctx) => { ctx.file = mockPdfFile(); } },
-    { id: 'jpg-to-pdf', setup: (ctx) => { ctx.extraFiles = [mockPngFile()]; } },
+    { id: 'images-to-pdf', setup: (ctx) => { ctx.extraFiles = [mockPngFile()]; } },
     { id: 'repair-pdf', setup: (ctx) => { ctx.file = mockPdfFile(); } },
     { id: 'pdf-to-jpg', setup: (ctx) => { ctx.file = mockPdfFile(); ctx.jpgDpi = '72 DPI'; } },
     { id: 'rotate-pdf', setup: (ctx) => { ctx.file = mockPdfFile(); } },
@@ -191,8 +191,8 @@ describe('serverExecuteTool', () => {
     );
   });
 
-  it('jpg-to-pdf requires images', async () => {
-    await expect(serverExecuteTool('jpg-to-pdf', emptyServerToolContext())).rejects.toThrow(
+  it('images-to-pdf requires images', async () => {
+    await expect(serverExecuteTool('images-to-pdf', emptyServerToolContext())).rejects.toThrow(
       'JPG or PNG',
     );
   });

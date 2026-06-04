@@ -38,6 +38,8 @@ RUN apt-get update \
     libreoffice-calc-nogui \
     libreoffice-impress-nogui \
     ghostscript \
+    imagemagick \
+    libheif1 \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /tmp/.config /tmp/.cache
 

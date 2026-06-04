@@ -31,6 +31,7 @@ class ToolUsageServiceTest {
     @Test
     void normalizesToolIds() {
         assertEquals("pdf-to-word", ToolUsageService.normalizeToolId("PDF_TO_WORD"));
+        assertEquals("images-to-pdf", ToolUsageService.normalizeToolId("jpg-to-pdf"));
         assertNull(ToolUsageService.normalizeToolId("  "));
     }
 }

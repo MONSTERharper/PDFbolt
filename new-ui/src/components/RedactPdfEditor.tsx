@@ -466,9 +466,9 @@ export function RedactPdfEditor({
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-[10px] font-mono text-amber-900 leading-relaxed">
-        <strong className="uppercase tracking-wider">Forensic redact</strong> — drag on the page to place
-        black boxes. Download rebuilds a new PDF by rasterizing pages and burning in the boxes (permanent), but it
-        removes selectable text/vector fidelity.
+        <strong className="uppercase tracking-wider">Permanent redaction</strong> — drag on the page to place
+        black boxes. The downloaded PDF bakes the boxes into the page image, so the covered content cannot be
+        selected or copied afterward.
       </div>
 
       {loadError && (

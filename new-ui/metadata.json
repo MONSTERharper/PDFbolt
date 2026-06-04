@@ -1,6 +1,6 @@
 {
   "name": "PDFbolt Suite",
-  "description": "A comprehensive suite of PDF tools including deterministic content-stream replacement, merging, splitting, and more.",
+  "description": "Online PDF tools to merge, split, convert, compress, replace text, and more.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["PDF Manipulation", "Content Stream Replacement", "PDF Suite"]
+  "majorCapabilities": ["PDF Manipulation", "Text Replacement", "PDF Suite"]
 }

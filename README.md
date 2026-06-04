@@ -199,7 +199,7 @@ See [.env.example](.env.example). Main keys:
 
 | Status | Tools |
 |--------|--------|
-| **Live** | merge, split, compress, replace, rotate, watermark, protect, unlock, sign, redact (browser), **compare-pdf**, **pdf-to-pdfa** (Ghostscript; optional veraPDF validation), pdf-to-jpg, **pdf-to-word/ppt/excel**, jpg-to-pdf, **html-to-pdf**, **word/powerpoint/excel ↔ PDF**, … |
+| **Live** | merge, split, compress, replace, rotate, watermark, protect, unlock, sign, redact (browser), **compare-pdf**, **pdf-to-pdfa** (Ghostscript; optional veraPDF validation), pdf-to-jpg, **pdf-to-word/ppt/excel**, images-to-pdf, **html-to-pdf**, **word/powerpoint/excel ↔ PDF**, … |
 | **WIP** | ocr-pdf |
 
 **LibreOffice required:** html-to-pdf, word/powerpoint/excel ↔ PDF, pdf-to-word/ppt/excel.

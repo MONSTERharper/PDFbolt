@@ -6,7 +6,7 @@ export const WIP_TOOL_IDS = new Set<string>(['ocr-pdf']);
 
 export const WIP_TOOL_REASONS: Record<string, string> = {
   'ocr-pdf':
-    'Full OCR (searchable text from scans) is in development. We are integrating a proper OCR engine.',
+    'Searchable text from scanned PDFs is coming soon. We are still building this feature.',
 };
 
 export function isToolLive(toolId: string): boolean {

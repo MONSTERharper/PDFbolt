@@ -10,7 +10,7 @@ export function boltToolName(toolId: string): string {
     'repair-pdf': 'bolt repair',
     'ocr-pdf': 'bolt ocr',
     'scan-to-pdf': 'bolt scan',
-    'jpg-to-pdf': 'bolt jpg-to-pdf',
+    'images-to-pdf': 'bolt image-to-pdf',
     'word-to-pdf': 'bolt word-to-pdf',
     'powerpoint-to-pdf': 'bolt powerpoint-to-pdf',
     'excel-to-pdf': 'bolt excel-to-pdf',
@@ -43,7 +43,7 @@ export function boltUploadHeading(toolId: string): string {
     case 'compare-pdf':
       return 'Two PDFs for bolt compare';
     case 'scan-to-pdf':
-    case 'jpg-to-pdf':
+    case 'images-to-pdf':
       return `Images for ${boltToolName(toolId)}`;
     case 'word-to-pdf':
       return 'Word file for bolt word-to-pdf';
@@ -65,8 +65,8 @@ export function boltUploadHint(toolId: string): string {
     case 'compare-pdf':
       return '2 PDFs';
     case 'scan-to-pdf':
-    case 'jpg-to-pdf':
-      return '1+ images';
+    case 'images-to-pdf':
+      return '1+ image files';
     case 'word-to-pdf':
     case 'powerpoint-to-pdf':
     case 'excel-to-pdf':
@@ -79,5 +79,5 @@ export function boltUploadHint(toolId: string): string {
 }
 
 export function boltExecuteLabel(toolId: string): string {
-  return `Execute ${boltToolName(toolId)}`;
+  return `Run ${boltToolName(toolId)}`;
 }

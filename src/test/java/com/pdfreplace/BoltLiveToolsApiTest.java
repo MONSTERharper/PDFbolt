@@ -2,6 +2,7 @@ package com.pdfreplace;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -83,7 +84,16 @@ class BoltLiveToolsApiTest {
     }
 
     @Test
-    void jpgToPdf() throws Exception {
+    void imagesToPdf() throws Exception {
+        mockMvc.perform(multipart("/api/pdf/tools")
+                        .file(PdfTestSupport.mockPng("files", "scan.png"))
+                        .param("operation", "images-to-pdf"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("application/pdf"));
+    }
+
+    @Test
+    void jpgToPdfOperationAliasStillWorks() throws Exception {
         mockMvc.perform(multipart("/api/pdf/tools")
                         .file(PdfTestSupport.mockPng("files", "scan.png"))
                         .param("operation", "jpg-to-pdf"))
@@ -200,6 +210,18 @@ class BoltLiveToolsApiTest {
                         .param("redactHeight", "40"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType("application/pdf"));
+    }
+
+    @Test
+    @EnabledIf("com.pdfreplace.GhostscriptConditions#isAvailable")
+    void pdfToPdfa() throws Exception {
+        mockMvc.perform(toolWithFile("pdf-to-pdfa")
+                        .param("pdfaStandard", "PDF/A-1b (ISO 19005-1)"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("application/pdf"))
+                .andExpect(header().exists("X-Bolt-Pdfa-Validated"))
+                .andExpect(header().exists("X-Bolt-Pdfa-Validation-Note"))
+                .andExpect(header().string("X-Bolt-Pdfa-Validation-Note", org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("11b"))));
     }
 
     @Test

@@ -1,3 +1,5 @@
+import { friendlyErrorMessage } from './friendlyError';
+
 export type MatchMode =
   | 'exact'
   | 'caseInsensitive'
@@ -65,10 +67,9 @@ export async function postReplaceBatch(params: {
   try {
     response = await fetch('/api/replace', { method: 'POST', body: data });
   } catch (err) {
-    const hint =
-      'Could not reach the PDF engine at /api/replace. ' +
-      'Start the Java backend on port 8080 (mvn spring-boot:run or docker compose up --build), ' +
-      'then use http://localhost:8080/replace or run "npm run dev" in new-ui/ (proxies /api to 8080).';
+    const hint = import.meta.env.DEV
+      ? 'Could not reach PDFBolt at /api/replace. Start the Java backend (mvn spring-boot:run) and open http://localhost:8080/.'
+      : 'Could not reach PDFBolt. Check your connection and try again.';
     if (err instanceof TypeError) {
       throw new Error(hint);
     }
@@ -84,7 +85,7 @@ export async function postReplaceBatch(params: {
           payload.message ||
           'This PDF is password-protected. Enter the document password to continue.';
       } else {
-        message = payload.message || message;
+        message = friendlyErrorMessage(payload.message || message);
       }
     } else {
       const text = await response.text();
@@ -120,6 +121,6 @@ export async function postContactInquiry(body: {
   });
   const payload = (await response.json().catch(() => ({}))) as { message?: string };
   if (!response.ok) {
-    throw new Error(payload.message || `Request failed with ${response.status}`);
+    throw new Error(friendlyErrorMessage(payload.message || `Request failed with ${response.status}`));
   }
 }

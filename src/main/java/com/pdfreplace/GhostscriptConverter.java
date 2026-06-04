@@ -59,15 +59,22 @@ public class GhostscriptConverter {
             }
             boolean validated = false;
             String validationNote;
+            String flavour = verapdfFlavour(standard);
             if (validateWithVerapdf && isVerapdfAvailable()) {
-                validateWithVerapdf(output, standard);
-                validated = true;
-                validationNote = "Validated with veraPDF (" + verapdfFlavour(standard) + ").";
+                try {
+                    validateWithVerapdf(output, flavour);
+                    validated = true;
+                    validationNote = "Passed PDF/A-" + flavour + " validation check.";
+                } catch (IOException ex) {
+                    validationNote = "Converted to PDF/A-" + flavour + ", but the archive check did not pass. "
+                            + trimLog(ex.getMessage());
+                    LOGGER.warn("veraPDF validation failed for {}: {}", flavour, ex.getMessage());
+                }
             } else if (validateWithVerapdf) {
-                validationNote = "Converted with Ghostscript; veraPDF is not installed so ISO compliance was not verified.";
+                validationNote = "Converted to PDF/A; compliance was not checked on this server.";
                 LOGGER.warn("veraPDF not found on PATH — returning Ghostscript PDF/A output without validation.");
             } else {
-                validationNote = "Converted with Ghostscript; server validation is disabled.";
+                validationNote = "Converted to PDF/A; validation is turned off on this server.";
             }
             return new PdfAConversionResult(Files.readAllBytes(output), validated, validationNote);
         } finally {
@@ -117,11 +124,10 @@ public class GhostscriptConverter {
     }
 
     private static String verapdfFlavour(PdfAStandard standard) {
-        return standard.ghostscriptLevel() + standard.conformance();
+        return standard.verapdfFlavour();
     }
 
-    private void validateWithVerapdf(Path pdf, PdfAStandard standard) throws IOException {
-        String flavour = verapdfFlavour(standard);
+    private void validateWithVerapdf(Path pdf, String flavour) throws IOException {
         List<String> cmd = List.of(
                 verapdfCommand,
                 "--flavour",
@@ -148,9 +154,7 @@ public class GhostscriptConverter {
         }
 
         if (process.exitValue() != 0) {
-            throw new IOException(
-                    "PDF/A validation failed (" + flavour + "). The file may need repair or a different PDF/A level. "
-                            + trimLog(log));
+            throw new IOException(trimLog(log));
         }
     }
 

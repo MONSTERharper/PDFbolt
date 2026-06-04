@@ -16,7 +16,7 @@ class PdfToolOperationTest {
             "remove-pages",
             "extract-pages",
             "organize-pdf",
-            "jpg-to-pdf",
+            "images-to-pdf",
             "scan-to-pdf",
             "word-to-pdf",
             "powerpoint-to-pdf",

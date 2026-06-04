@@ -38,7 +38,7 @@ public class PdfUploadValidator {
             return;
         }
         if (files.length > maxFiles) {
-            throw new IllegalArgumentException("Too many files uploaded. Maximum allowed is " + maxFiles + ".");
+            throw new IllegalArgumentException(HumanMessages.tooManyFiles(maxFiles));
         }
         long totalBytes = 0;
         for (MultipartFile file : files) {
@@ -46,7 +46,7 @@ public class PdfUploadValidator {
             totalBytes += file.getSize();
         }
         if (totalBytes > maxTotalUploadBytes) {
-            throw new IllegalArgumentException("Total upload size exceeds the limit of " + maxTotalUploadBytes + " bytes.");
+            throw new IllegalArgumentException(HumanMessages.totalUploadTooLarge(maxTotalUploadBytes));
         }
     }
 
@@ -55,8 +55,7 @@ public class PdfUploadValidator {
             throw new IllegalArgumentException("Upload a valid PDF file.");
         }
         if (file.getSize() > maxFileSizeBytes) {
-            throw new IllegalArgumentException("File '" + safeFilename(file.getOriginalFilename())
-                    + "' exceeds per-file limit of " + maxFileSizeBytes + " bytes.");
+            throw new IllegalArgumentException(HumanMessages.fileTooLarge(maxFileSizeBytes));
         }
         String filename = file.getOriginalFilename();
         if (filename != null && !filename.toLowerCase(Locale.ROOT).endsWith(".pdf")) {
@@ -69,7 +68,7 @@ public class PdfUploadValidator {
             throw new IllegalArgumentException("Upload an HTML file (.html or .htm).");
         }
         if (file.getSize() > maxFileSizeBytes) {
-            throw new IllegalArgumentException("HTML file exceeds per-file limit of " + maxFileSizeBytes + " bytes.");
+            throw new IllegalArgumentException("HTML file is too large (maximum " + HumanMessages.formatBytes(maxFileSizeBytes) + ").");
         }
         String filename = file.getOriginalFilename();
         if (filename == null) {
@@ -88,7 +87,7 @@ public class PdfUploadValidator {
         long bytes = html.getBytes(StandardCharsets.UTF_8).length;
         if (bytes > maxHtmlContentBytes) {
             throw new IllegalArgumentException(
-                    "HTML content exceeds the limit of " + maxHtmlContentBytes + " bytes.");
+                    "HTML content is too large (maximum " + HumanMessages.formatBytes(maxHtmlContentBytes) + ").");
         }
     }
 
@@ -97,18 +96,18 @@ public class PdfUploadValidator {
             throw new IllegalArgumentException("Upload a Word, PowerPoint, or Excel file.");
         }
         if (file.getSize() > maxFileSizeBytes) {
-            throw new IllegalArgumentException("File '" + safeFilename(file.getOriginalFilename())
-                    + "' exceeds per-file limit of " + maxFileSizeBytes + " bytes.");
+            throw new IllegalArgumentException(HumanMessages.fileTooLarge(maxFileSizeBytes));
         }
         type.ensureFilename(file.getOriginalFilename());
     }
 
     public void validateImageBatch(MultipartFile[] files) {
         if (files == null || files.length == 0) {
-            throw new IllegalArgumentException("Upload at least one image (JPG or PNG).");
+            throw new IllegalArgumentException(
+                    "Upload at least one image (PNG, JPEG, GIF, WebP, BMP, or TIFF).");
         }
         if (files.length > maxFiles) {
-            throw new IllegalArgumentException("Too many files uploaded. Maximum allowed is " + maxFiles + ".");
+            throw new IllegalArgumentException(HumanMessages.tooManyFiles(maxFiles));
         }
         long totalBytes = 0;
         for (MultipartFile file : files) {
@@ -116,12 +115,12 @@ public class PdfUploadValidator {
                 throw new IllegalArgumentException("Upload a valid image file.");
             }
             if (file.getSize() > maxFileSizeBytes) {
-                throw new IllegalArgumentException("Image file exceeds size limit.");
+                throw new IllegalArgumentException(HumanMessages.fileTooLarge(maxFileSizeBytes));
             }
             totalBytes += file.getSize();
         }
         if (totalBytes > maxTotalUploadBytes) {
-            throw new IllegalArgumentException("Total upload size exceeds the limit.");
+            throw new IllegalArgumentException(HumanMessages.totalUploadTooLarge(maxTotalUploadBytes));
         }
     }
 
@@ -133,7 +132,7 @@ public class PdfUploadValidator {
         try (PDDocument document = openForPageCount(pdfPath, password)) {
             int pages = document.getNumberOfPages();
             if (pages > maxPages) {
-                throw new IllegalArgumentException("PDF has " + pages + " pages, exceeding the limit of " + maxPages + ".");
+                throw new IllegalArgumentException(HumanMessages.tooManyPages(pages, maxPages));
             }
         }
     }

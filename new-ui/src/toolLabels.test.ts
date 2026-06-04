@@ -11,11 +11,11 @@ describe('toolLabels', () => {
   it('upload headings describe each bolt flow', () => {
     expect(boltUploadHeading('merge')).toContain('bolt merge');
     expect(boltUploadHeading('split')).toContain('bolt split');
-    expect(boltUploadHeading('jpg-to-pdf')).toContain('bolt jpg-to-pdf');
+    expect(boltUploadHeading('images-to-pdf')).toContain('bolt image-to-pdf');
     expect(boltUploadHeading('compare-pdf')).toContain('Two PDFs');
   });
 
   it('execute label uses bolt name', () => {
-    expect(boltExecuteLabel('compress')).toBe('Execute bolt compress');
+    expect(boltExecuteLabel('compress')).toBe('Run bolt compress');
   });
 });

@@ -1,3 +1,5 @@
+import { friendlyErrorMessage } from './friendlyError';
+
 export type PdfToolResult =
   | {
       kind: 'file';
@@ -19,9 +21,9 @@ export async function postPdfTool(form: FormData): Promise<PdfToolResult> {
   try {
     response = await fetch('/api/pdf/tools', { method: 'POST', body: form });
   } catch (err) {
-    const hint =
-      'Could not reach the PDF engine at /api/pdf/tools. ' +
-      'Start the Java backend on port 8080 (mvn spring-boot:run), then use the app via http://localhost:8080/ or npm run dev in new-ui/.';
+    const hint = import.meta.env.DEV
+      ? 'Could not reach PDFBolt at /api/pdf/tools. Start the Java backend (mvn spring-boot:run) and open http://localhost:8080/.'
+      : 'Could not reach PDFBolt. Check your connection and try again.';
     if (err instanceof TypeError) {
       throw new Error(hint);
     }
@@ -34,7 +36,7 @@ export async function postPdfTool(form: FormData): Promise<PdfToolResult> {
     let message = `Request failed with ${response.status}`;
     if (contentType.includes('application/json')) {
       const payload = (await response.json()) as { message?: string; error?: string };
-      message = payload.message || message;
+      message = friendlyErrorMessage(payload.message || message);
       if (payload.error === 'pdf_password_required') {
         message = payload.message || 'This PDF is password-protected. Enter the document password to continue.';
       }

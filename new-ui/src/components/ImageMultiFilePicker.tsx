@@ -1,16 +1,10 @@
 import React, { useId } from 'react';
 import { Image, Trash2 } from 'lucide-react';
-
-const IMAGE_ACCEPT = 'image/png,image/jpeg,image/jpg';
-
-function isImageFile(file: File): boolean {
-  const name = file.name.toLowerCase();
-  if (name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg')) {
-    return true;
-  }
-  const mime = (file.type || '').toLowerCase();
-  return mime === 'image/png' || mime === 'image/jpeg';
-}
+import {
+  IMAGE_FILE_ACCEPT,
+  isSupportedImageFile,
+  SUPPORTED_IMAGE_FORMATS_LABEL,
+} from '../imageFileUtils';
 
 export interface ImageMultiFilePickerProps {
   files: File[];
@@ -23,7 +17,7 @@ export interface ImageMultiFilePickerProps {
   className?: string;
 }
 
-/** Select multiple images in one step (bolt scan / bolt jpg-to-pdf). */
+/** Select multiple images in one step (bolt scan / bolt image-to-pdf). */
 export function ImageMultiFilePicker({
   files,
   onChange,
@@ -41,14 +35,14 @@ export function ImageMultiFilePicker({
     if (!selected || selected.length === 0) {
       return;
     }
-    const images = Array.from(selected).filter(isImageFile);
+    const images = Array.from(selected).filter(isSupportedImageFile);
     if (images.length === 0) {
-      onInvalidFile?.('Only PNG or JPG images can be selected.');
+      onInvalidFile?.(`Only ${SUPPORTED_IMAGE_FORMATS_LABEL} files can be selected.`);
       e.target.value = '';
       return;
     }
     if (images.length < selected.length) {
-      onInvalidFile?.('Some files were skipped — only PNG and JPG are allowed.');
+      onInvalidFile?.(`Some files were skipped — supported formats: ${SUPPORTED_IMAGE_FORMATS_LABEL}.`);
     }
     onChange([...files, ...images]);
     e.target.value = '';
@@ -72,7 +66,7 @@ export function ImageMultiFilePicker({
           id={inputId}
           type="file"
           multiple
-          accept={IMAGE_ACCEPT}
+          accept={IMAGE_FILE_ACCEPT}
           onChange={handleChange}
           aria-labelledby={labelId}
           className="absolute inset-0 h-full w-full cursor-pointer opacity-0"

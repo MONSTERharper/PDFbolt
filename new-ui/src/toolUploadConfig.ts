@@ -1,3 +1,5 @@
+import { canonicalToolId } from './toolIdAliases';
+
 export type ToolUploadKind =
   | 'single-pdf'
   | 'multi-pdf'
@@ -13,7 +15,7 @@ const KIND_BY_TOOL: Record<string, ToolUploadKind> = {
   merge: 'multi-pdf',
   'compare-pdf': 'dual-pdf',
   'scan-to-pdf': 'multi-image',
-  'jpg-to-pdf': 'multi-image',
+  'images-to-pdf': 'multi-image',
   'word-to-pdf': 'office-file',
   'powerpoint-to-pdf': 'office-file',
   'excel-to-pdf': 'office-file',
@@ -21,7 +23,7 @@ const KIND_BY_TOOL: Record<string, ToolUploadKind> = {
 };
 
 export function getToolUploadKind(toolId: string): ToolUploadKind {
-  return KIND_BY_TOOL[toolId] ?? 'single-pdf';
+  return KIND_BY_TOOL[canonicalToolId(toolId)] ?? 'single-pdf';
 }
 
 export function toolNeedsPdfFile(toolId: string): boolean {

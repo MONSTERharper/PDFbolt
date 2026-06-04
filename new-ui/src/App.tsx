@@ -78,8 +78,27 @@ import {
 import { formatBoltVersion } from './appVersion';
 import { useAppVersion } from './useAppVersion';
 import { boundedIntFromInput } from './parseNumber';
-
-type View = 'dashboard' | 'directory' | 'replace' | 'about' | 'contact' | 'wip';
+import { friendlyErrorMessage } from './friendlyError';
+import { CookieNotice } from './components/CookieNotice';
+import { OnboardingBanner, ONBOARDING_QUICK_TOOL_IDS } from './components/OnboardingBanner';
+import { SiteFooter } from './components/SiteFooter';
+import { LegalPrivacy } from './pages/LegalPrivacy';
+import { LegalTerms } from './pages/LegalTerms';
+import { LegalFaq } from './pages/LegalFaq';
+import { StatusPage } from './pages/StatusPage';
+import { NotFound } from './pages/NotFound';
+import { applyPageMeta, defaultPageDescription } from './pageMeta';
+import { BOLT_TOOL_IDS } from './toolsCatalog';
+import { canonicalToolId } from './toolIdAliases';
+import { UploadLimitsNote } from './components/UploadLimitsNote';
+import { useSiteConfig } from './useSiteConfig';
+import {
+  type AppView,
+  legacyRedirectPath,
+  parseRoute,
+  pageTitle,
+  toolPath,
+} from './routing';
 
 const BoltBrand = ({ text, className = "", showInfo = false }: { text: string, className?: string, showInfo?: boolean }) => {
   const parts = text.split(/(bolt)/gi);
@@ -96,15 +115,15 @@ const BoltBrand = ({ text, className = "", showInfo = false }: { text: string, c
         )}
       </span>
       
-      {/* Dynamic (i) Icon with Deterministic Engine tooltip */}
+      {/* Replace tool help tooltip */}
       {showInfo && (
         <span className="relative group/tooltip inline-flex items-center cursor-help" style={{ textTransform: 'none' }}>
           <Info size={14} className="text-gray-400 hover:text-[#FF3300] transition-colors shrink-0" />
           
           {/* Tooltip Card */}
           <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 bg-[#141414] text-[#E4E3E0] text-[10px] font-sans font-normal not-italic tracking-normal leading-relaxed p-3 rounded-lg shadow-xl border border-white/10 opacity-0 group-hover/tooltip:opacity-100 pointer-events-none transition-all duration-200 z-50">
-            <span className="font-bold text-[#FF3300] block mb-1 font-mono uppercase tracking-widest text-[8px]">ENGINE NOTE</span>
-            Deterministic replacement ensures no layout shifts. If "Strict mode" is enabled, ensure finding and replacement strings match in character count.
+            <span className="font-bold text-[#FF3300] block mb-1 font-mono uppercase tracking-widest text-[8px]">Tip</span>
+            Text replacement keeps the original layout when possible. With strict same-length mode on, the replacement must be the same length as the text you are finding.
             
             {/* Accent Arrow */}
             <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#141414]" />
@@ -137,118 +156,122 @@ const CATEGORIES: SuiteCategory[] = [
   {
     id: 'organize',
     title: 'Organize PDF',
-    description: 'Surgically reorganize and manipulate PDF layout structures.',
+    description: 'Merge, split, reorder, and remove pages.',
     icon: LayoutGrid,
     tools: [
-      { id: 'merge', name: 'bolt merge', cleanName: 'Merge PDF', icon: Combine, description: 'Combine multiple PDF files into one seamless document.', status: 'live' },
-      { id: 'split', name: 'bolt split', cleanName: 'Split PDF', icon: Scissors, description: 'Slices a single document into target pages or segments.', status: 'live' },
-      { id: 'remove-pages', name: 'bolt remove', cleanName: 'Remove pages', icon: Trash2, description: 'Instantly excise specified pages from the document structure.', status: 'live' },
-      { id: 'extract-pages', name: 'bolt extract', cleanName: 'Extract pages', icon: Download, description: 'Pull individual pages out of a larger document file.', status: 'live' },
-      { id: 'organize-pdf', name: 'bolt organize', cleanName: 'Organize PDF', icon: LayoutGrid, description: 'Sort, reorder, and visually adjust file structure.', status: 'live' },
+      { id: 'merge', name: 'bolt merge', cleanName: 'Merge PDF', icon: Combine, description: 'Combine multiple PDFs into one file.', status: 'live' },
+      { id: 'split', name: 'bolt split', cleanName: 'Split PDF', icon: Scissors, description: 'Split a PDF into separate files by page or range.', status: 'live' },
+      { id: 'remove-pages', name: 'bolt remove', cleanName: 'Remove pages', icon: Trash2, description: 'Delete selected pages from your PDF.', status: 'live' },
+      { id: 'extract-pages', name: 'bolt extract', cleanName: 'Extract pages', icon: Download, description: 'Save chosen pages as a new PDF.', status: 'live' },
+      { id: 'organize-pdf', name: 'bolt organize', cleanName: 'Organize PDF', icon: LayoutGrid, description: 'Change the order of pages in a PDF.', status: 'live' },
     ]
   },
   {
     id: 'scan',
     title: 'Scan to PDF',
-    description: 'Turn physical layouts and photos into portable documents.',
+    description: 'Turn photos and scans into PDFs.',
     icon: Camera,
     tools: [
-      { id: 'scan-to-pdf', name: 'bolt scan', cleanName: 'Scan to PDF', icon: Camera, description: 'Digitize legacy physical papers via device camera input.', status: 'live' },
+      { id: 'scan-to-pdf', name: 'bolt scan', cleanName: 'Scan to PDF', icon: Camera, description: 'Create a PDF from photos taken with your camera or uploaded images.', status: 'live' },
     ]
   },
   {
     id: 'optimize',
     title: 'Optimize PDF',
-    description: 'Repair structural tables and compress document streams.',
+    description: 'Make files smaller and fix common PDF problems.',
     icon: Sparkles,
     tools: [
-      { id: 'compress', name: 'bolt compress', cleanName: 'Compress PDF', icon: Minimize2, description: 'Optimize graphics and shrink vector size payload.', status: 'live' },
-      { id: 'repair-pdf', name: 'bolt repair', cleanName: 'Repair PDF', icon: Hammer, description: 'Fix broken layout tables and corrupt cross-reference streams.', status: 'live' },
-      { id: 'ocr-pdf', name: 'bolt ocr', cleanName: 'OCR PDF', icon: Sparkles, description: 'Make scanned PDFs searchable with real OCR (coming soon).', status: 'wip' },
+      { id: 'compress', name: 'bolt compress', cleanName: 'Compress PDF', icon: Minimize2, description: 'Reduce file size while keeping readable quality.', status: 'live' },
+      { id: 'repair-pdf', name: 'bolt repair', cleanName: 'Repair PDF', icon: Hammer, description: 'Fix PDFs that will not open or look corrupted.', status: 'live' },
+      { id: 'ocr-pdf', name: 'bolt ocr', cleanName: 'OCR PDF', icon: Sparkles, description: 'Make scanned PDFs searchable (coming soon).', status: 'wip' },
     ]
   },
   {
     id: 'convert-to',
     title: 'Convert to PDF',
-    description: 'Produce high-fidelity PDF documents from legacy assets.',
+    description: 'Create PDFs from images, Office files, and HTML.',
     icon: FileUp,
     tools: [
-      { id: 'jpg-to-pdf', name: 'bolt jpg-to-pdf', cleanName: 'JPG to PDF', icon: Image, description: 'Assemble images inside scalable document frames.', status: 'live' },
-      { id: 'word-to-pdf', name: 'bolt word-to-pdf', cleanName: 'WORD to PDF', icon: FileText, description: 'Convert Word (.doc, .docx) to PDF via LibreOffice.', status: 'live' },
-      { id: 'powerpoint-to-pdf', name: 'bolt powerpoint-to-pdf', cleanName: 'POWERPOINT to PDF', icon: Presentation, description: 'Convert PowerPoint (.ppt, .pptx) to PDF via LibreOffice.', status: 'live' },
-      { id: 'excel-to-pdf', name: 'bolt excel-to-pdf', cleanName: 'EXCEL to PDF', icon: FileSpreadsheet, description: 'Convert Excel (.xls, .xlsx) to PDF via LibreOffice.', status: 'live' },
-      { id: 'html-to-pdf', name: 'bolt html-to-pdf', cleanName: 'HTML to PDF', icon: Code, description: 'Render HTML to PDF via LibreOffice on the server.', status: 'live' },
+      { id: 'images-to-pdf', name: 'bolt image-to-pdf', cleanName: 'Image to PDF', icon: Image, description: 'Turn PNG, JPEG, HEIC, GIF, WebP, BMP, or TIFF images into one PDF.', status: 'live' },
+      { id: 'word-to-pdf', name: 'bolt word-to-pdf', cleanName: 'WORD to PDF', icon: FileText, description: 'Convert Word (.doc, .docx) to PDF.', status: 'live' },
+      { id: 'powerpoint-to-pdf', name: 'bolt powerpoint-to-pdf', cleanName: 'POWERPOINT to PDF', icon: Presentation, description: 'Convert PowerPoint (.ppt, .pptx) to PDF.', status: 'live' },
+      { id: 'excel-to-pdf', name: 'bolt excel-to-pdf', cleanName: 'EXCEL to PDF', icon: FileSpreadsheet, description: 'Convert Excel (.xls, .xlsx) to PDF.', status: 'live' },
+      { id: 'html-to-pdf', name: 'bolt html-to-pdf', cleanName: 'HTML to PDF', icon: Code, description: 'Turn HTML into a PDF.', status: 'live' },
     ]
   },
   {
     id: 'convert-from',
     title: 'Convert from PDF',
-    description: 'De-structure and extract raw formats from PDF content.',
+    description: 'Export PDFs to images, Office formats, and archive PDF/A.',
     icon: Download,
     tools: [
-      { id: 'pdf-to-jpg', name: 'bolt pdf-to-jpg', cleanName: 'PDF to JPG', icon: Image, description: 'Rasterize absolute vector drawings into clean image series.', status: 'live' },
-      { id: 'pdf-to-word', name: 'bolt pdf-to-word', cleanName: 'PDF to WORD', icon: FileText, description: 'Export PDF to Word .docx via LibreOffice (best for simple digital PDFs).', status: 'live' },
-      { id: 'pdf-to-powerpoint', name: 'bolt pdf-to-powerpoint', cleanName: 'PDF to POWERPOINT', icon: Presentation, description: 'Export PDF to PowerPoint .pptx via LibreOffice.', status: 'live' },
-      { id: 'pdf-to-excel', name: 'bolt pdf-to-excel', cleanName: 'PDF to EXCEL', icon: FileSpreadsheet, description: 'Export PDF to Excel .xlsx via LibreOffice.', status: 'live' },
-      { id: 'pdf-to-pdfa', name: 'bolt pdf-to-pdfa', cleanName: 'PDF to PDF/A', icon: Shield, description: 'Convert to PDF/A with Ghostscript (validated when veraPDF is installed).', status: 'live' },
+      { id: 'pdf-to-jpg', name: 'bolt pdf-to-jpg', cleanName: 'PDF to JPG', icon: Image, description: 'Save each page as a JPG image.', status: 'live' },
+      { id: 'pdf-to-word', name: 'bolt pdf-to-word', cleanName: 'PDF to WORD', icon: FileText, description: 'Export to Word .docx (works best on simple, text-based PDFs).', status: 'live' },
+      { id: 'pdf-to-powerpoint', name: 'bolt pdf-to-powerpoint', cleanName: 'PDF to POWERPOINT', icon: Presentation, description: 'Export to PowerPoint .pptx.', status: 'live' },
+      { id: 'pdf-to-excel', name: 'bolt pdf-to-excel', cleanName: 'PDF to EXCEL', icon: FileSpreadsheet, description: 'Export to Excel .xlsx.', status: 'live' },
+      { id: 'pdf-to-pdfa', name: 'bolt pdf-to-pdfa', cleanName: 'PDF to PDF/A', icon: Shield, description: 'Convert to PDF/A for long-term archiving (checked when validation is available).', status: 'live' },
     ]
   },
   {
     id: 'edit',
     title: 'Edit PDF',
-    description: 'Surgically replace, rotate, and stamp visual data streams.',
+    description: 'Replace text, rotate pages, add numbers, watermarks, and more.',
     icon: FileType,
     tools: [
-      { id: 'replace', name: 'bolt replace', cleanName: 'Replace Text', icon: Replace, description: 'Replace string operands inside PDF drawing streams locally.', status: 'live', highlight: true },
-      { id: 'rotate-pdf', name: 'bolt rotate', cleanName: 'Rotate PDF', icon: RotateCw, description: 'Apply dynamic rotation offsets to document pages.', status: 'live' },
-      { id: 'add-page-numbers', name: 'bolt page-numbers', cleanName: 'Add page numbers', icon: Hash, description: 'Stamp consistent page count indices onto document margins.', status: 'live' },
-      { id: 'add-watermark', name: 'bolt watermark', cleanName: 'Add watermark', icon: FileText, description: 'Embed persistent security overlay markings onto vectors.', status: 'live' },
-      { id: 'crop-pdf', name: 'bolt crop', cleanName: 'Crop PDF', icon: Crop, description: 'Set custom cropping bounds for visual page areas.', status: 'live' },
-      { id: 'edit-pdf', name: 'bolt edit', cleanName: 'Edit PDF', icon: FileType, description: 'General structural stream editor and value corrector.', status: 'live' },
+      { id: 'replace', name: 'bolt replace', cleanName: 'Replace Text', icon: Replace, description: 'Find and replace text in a PDF without retyping the whole document.', status: 'live', highlight: true },
+      { id: 'rotate-pdf', name: 'bolt rotate', cleanName: 'Rotate PDF', icon: RotateCw, description: 'Rotate pages 90°, 180°, or 270°.', status: 'live' },
+      { id: 'add-page-numbers', name: 'bolt page-numbers', cleanName: 'Add page numbers', icon: Hash, description: 'Add page numbers to the header or footer.', status: 'live' },
+      { id: 'add-watermark', name: 'bolt watermark', cleanName: 'Add watermark', icon: FileText, description: 'Add a text watermark across your pages.', status: 'live' },
+      { id: 'crop-pdf', name: 'bolt crop', cleanName: 'Crop PDF', icon: Crop, description: 'Trim margins or crop to a smaller area.', status: 'live' },
+      { id: 'edit-pdf', name: 'bolt edit', cleanName: 'Edit PDF', icon: FileType, description: 'Update title, author, and other document properties.', status: 'live' },
     ]
   },
   {
     id: 'forms',
     title: 'PDF Forms',
-    description: 'Design and embed fillable interactive form scopes.',
+    description: 'Work with fillable PDF forms.',
     icon: PenTool,
     tools: [
-      { id: 'pdf-forms', name: 'bolt forms', cleanName: 'PDF Forms', icon: PenTool, description: 'Inject operational client-side form controls into document layers.', status: 'live' },
+      { id: 'pdf-forms', name: 'bolt forms', cleanName: 'PDF Forms', icon: PenTool, description: 'Fill in form fields or flatten them into the page.', status: 'live' },
     ]
   },
   {
     id: 'security',
     title: 'PDF Security',
-    description: 'Stripe cryptographic protection and redact sensitive paths.',
+    description: 'Passwords, signatures, redaction, and comparison.',
     icon: ShieldCheck,
     tools: [
-      { id: 'unlock-pdf', name: 'bolt unlock', cleanName: 'Unlock PDF', icon: Unlock, description: 'Safely strip restricting passwords from local streams.', status: 'live' },
-      { id: 'protect-pdf', name: 'bolt protect', cleanName: 'Protect PDF', icon: Lock, description: 'Encrypt document indices using high-strength protection.', status: 'live' },
-      { id: 'sign-pdf', name: 'bolt sign', cleanName: 'Sign PDF', icon: PenTool, description: 'Apply personal cryptographic drawing signatures locally.', status: 'live' },
-      { id: 'redact-pdf', name: 'bolt redact', cleanName: 'Redact PDF', icon: Eraser, description: 'Black out a rectangular region on any page (visual blackout).', status: 'live' },
-      { id: 'compare-pdf', name: 'bolt compare', cleanName: 'Compare PDF', icon: ArrowLeftRight, description: 'Compare two PDFs by text and page layout.', status: 'live' },
+      { id: 'unlock-pdf', name: 'bolt unlock', cleanName: 'Unlock PDF', icon: Unlock, description: 'Remove password protection when you know the password.', status: 'live' },
+      { id: 'protect-pdf', name: 'bolt protect', cleanName: 'Protect PDF', icon: Lock, description: 'Add a password to open or change the file.', status: 'live' },
+      { id: 'sign-pdf', name: 'bolt sign', cleanName: 'Sign PDF', icon: PenTool, description: 'Place a drawn signature on the page.', status: 'live' },
+      { id: 'redact-pdf', name: 'bolt redact', cleanName: 'Redact PDF', icon: Eraser, description: 'Cover sensitive areas with black boxes.', status: 'live' },
+      { id: 'compare-pdf', name: 'bolt compare', cleanName: 'Compare PDF', icon: ArrowLeftRight, description: 'See how two PDFs differ in text and layout.', status: 'live' },
     ]
   }
 ];
 
 function resolveSuiteTool(id: string): SuiteTool | null {
-  if (id === 'replace') {
+  const toolId = canonicalToolId(id);
+  if (toolId === 'replace') {
     return {
       id: 'replace',
       name: 'bolt replace',
       cleanName: 'Replace Text',
       icon: Replace,
-      description: 'Replace raw content streams.',
+      description: 'Find and replace text in a PDF.',
       status: 'live',
       highlight: true,
     };
   }
-  return CATEGORIES.flatMap((category) => category.tools).find((tool) => tool.id === id) ?? null;
+  return CATEGORIES.flatMap((category) => category.tools).find((tool) => tool.id === toolId) ?? null;
 }
 
+const ALL_TOOL_IDS: ReadonlySet<string> = new Set(BOLT_TOOL_IDS);
+
 export default function App() {
+  const siteConfig = useSiteConfig();
   const { displayVersion, versionMismatch, buildVersion, serverVersion } = useAppVersion();
-  const [currentView, setCurrentView] = useState<View>('dashboard');
+  const [currentView, setCurrentView] = useState<AppView>('dashboard');
   const [selectedWipTool, setSelectedWipTool] = useState<SuiteTool | null>(null);
   const [popularToolIds, setPopularToolIds] = useState<string[]>([...DEFAULT_POPULAR_TOOL_IDS]);
   const [recentToolIds, setRecentToolIds] = useState<string[]>([]);
@@ -282,8 +305,8 @@ export default function App() {
 
   // States for all the newly live operational PDF tools
   const [extraFiles, setExtraFiles] = useState<File[]>([]);
-  const [toolText, setToolText] = useState('John Doe, engineering leader\nCreated at absolute high conformance.');
-  const [toolTitle, setToolTitle] = useState('Surgical Document Report');
+  const [toolText, setToolText] = useState('John Doe, Sample Company\nQuarterly report draft.');
+  const [toolTitle, setToolTitle] = useState('Sample Report');
   const [htmlInputMode, setHtmlInputMode] = useState<HtmlInputMode>('file');
   const [ocrLang, setOcrLang] = useState('English');
   const [splitRange, setSplitRange] = useState('1');
@@ -308,7 +331,7 @@ export default function App() {
   const [metadataAuthor, setMetadataAuthor] = useState('');
   const [metadataSubject, setMetadataSubject] = useState('');
   const [metadataCreator, setMetadataCreator] = useState('PDFbolt');
-  const [protectPass, setProtectPass] = useState('bolt-safe');
+  const [protectPass, setProtectPass] = useState('');
   const [redactRegions, setRedactRegions] = useState<RedactRegion[]>([]);
   const [compareFile2, setCompareFile2] = useState<File | null>(null);
 
@@ -321,7 +344,7 @@ export default function App() {
   const [compressLevel, setCompressLevel] = useState<CompressLevel>('balanced');
   const [compressRetainMetadata, setCompressRetainMetadata] = useState(true);
   const [compressHoverLevel, setCompressHoverLevel] = useState<CompressLevel | null>(null);
-  const [repairStrategy, setRepairStrategy] = useState('Rebuild cross-reference table stream');
+  const [repairStrategy, setRepairStrategy] = useState('Rebuild document index (recommended)');
   const [unlockPassword, setUnlockPassword] = useState('');
   const [formsFlatten, setFormsFlatten] = useState(false);
   const [jpgDpi, setJpgDpi] = useState('150 DPI (Standard)');
@@ -409,26 +432,71 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
-  const syncViewFromPath = useCallback(() => {
-    const path = window.location.pathname.replace(/\/+$/, '') || '/';
-    if (path === '/about') setCurrentView('about');
-    else if (path === '/contact') setCurrentView('contact');
-    else if (path === '/replace') setCurrentView('replace');
-    else if (path === '/directory') setCurrentView('directory');
-    else if (path === '/compress') {
-      const compressTool = CATEGORIES.flatMap((c) => c.tools).find((t) => t.id === 'compress');
-      if (compressTool) {
-        setSelectedWipTool(compressTool);
+  const applyRoute = useCallback((route: ReturnType<typeof parseRoute>, pathname: string) => {
+    if (route.view === 'wip' && route.toolId) {
+      const tool = resolveSuiteTool(route.toolId);
+      if (tool) {
+        setSelectedWipTool(tool);
         setCurrentView('wip');
-      } else {
-        setCurrentView('dashboard');
+        applyPageMeta({
+          title: pageTitle('wip', tool.cleanName),
+          description: tool.description,
+          path: pathname,
+        });
+        return;
       }
-    } else setCurrentView('dashboard');
+      setCurrentView('not-found');
+      applyPageMeta({ title: pageTitle('not-found'), path: pathname });
+      return;
+    }
+    if (route.view === 'replace') {
+      setCurrentView('replace');
+      applyPageMeta({
+        title: pageTitle('replace'),
+        description: 'Find and replace text in your PDF, then download the updated file.',
+        path: pathname,
+      });
+      return;
+    }
+    setSelectedWipTool(null);
+    setCurrentView(route.view);
+    applyPageMeta({
+      title: pageTitle(route.view),
+      description: defaultPageDescription(),
+      path: pathname,
+    });
   }, []);
 
-  const goToView = useCallback((view: View, path: string) => {
+  const syncViewFromPath = useCallback(() => {
+    const pathname = window.location.pathname;
+    const redirect = legacyRedirectPath(pathname, ALL_TOOL_IDS);
+    if (redirect) {
+      window.history.replaceState({}, '', redirect);
+    }
+    const effectivePath = redirect ?? pathname;
+    const route = parseRoute(effectivePath, ALL_TOOL_IDS);
+    applyRoute(route, effectivePath);
+  }, [applyRoute]);
+
+  const goToView = useCallback((view: AppView, path: string, tool?: SuiteTool | null) => {
+    if (view === 'wip' && tool) {
+      setSelectedWipTool(tool);
+    } else if (view !== 'wip') {
+      setSelectedWipTool(null);
+    }
     setCurrentView(view);
     window.history.pushState({}, '', path);
+    const description =
+      view === 'wip' && tool
+        ? tool.description
+        : view === 'replace'
+          ? 'Find and replace text in your PDF, then download the updated file.'
+          : defaultPageDescription();
+    applyPageMeta({
+      title: pageTitle(view, tool?.cleanName),
+      description,
+      path,
+    });
   }, []);
 
   useEffect(() => {
@@ -493,7 +561,7 @@ export default function App() {
     }
     setIsProcessing(true);
     setReplaceStatus({ msg: 'Sending PDF to PDFBolt server…', type: 'info' });
-    addLog('Sending PDF to PDFBolt server engine...');
+    addLog('Sending PDF to PDFBolt server...');
     try {
       const result = await serverReplacePdf(file, activePairs, {
         matchMode,
@@ -519,7 +587,7 @@ export default function App() {
         addLog(msg, 'info');
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = friendlyErrorMessage(err instanceof Error ? err.message : String(err));
       setReplaceStatus({ msg, type: 'error' });
       addLog(msg, 'error');
     } finally {
@@ -547,7 +615,8 @@ export default function App() {
       setContactSubject('');
       setContactMessage('');
     } catch (err) {
-      setContactStatus({ msg: err instanceof Error ? err.message : String(err), type: 'error' });
+      const raw = err instanceof Error ? err.message : String(err);
+      setContactStatus({ msg: friendlyErrorMessage(raw), type: 'error' });
     } finally {
       setContactSending(false);
     }
@@ -571,7 +640,7 @@ export default function App() {
     }
     setIsProcessing(true);
     setToolRunStatus({ msg: `Sending ${toolId} to PDFBolt server…`, type: 'info' });
-    addLog(`Sending ${toolId} to PDFBolt server engine...`);
+    addLog(`Sending ${toolId} to PDFBolt server...`);
     try {
       if (pdfGate.passwordBlocked) {
         throw new Error('Enter the correct PDF password before running this tool.');
@@ -692,7 +761,7 @@ export default function App() {
       setToolRunStatus({ msg: successMsg, type: 'ok' });
       addLog(successMsg, 'success');
     } catch (e) {
-      const errMsg = e instanceof Error ? e.message : String(e);
+      const errMsg = friendlyErrorMessage(e instanceof Error ? e.message : String(e));
       if (isPdfPasswordRequiredError(e)) {
         for (const entry of encryptedPdfEntries) {
           entry.onPasswordChange('');
@@ -722,20 +791,16 @@ export default function App() {
   });
 
   const handleToolClick = (tool: SuiteTool) => {
+    setFile(null);
+    setExtraFiles([]);
+    setCompareFile2(null);
+    setComparisonReport(null);
+    setFileUploadFeedback(null);
+    setToolRunStatus(null);
     if (tool.id === 'replace') {
-      goToView('replace', '/replace');
+      goToView('replace', toolPath('replace'), tool);
     } else {
-      setFile(null);
-      setExtraFiles([]);
-      setCompareFile2(null);
-      setComparisonReport(null);
-      setFileUploadFeedback(null);
-      setSelectedWipTool(tool);
-      setToolRunStatus(null);
-      setCurrentView('wip');
-      if (tool.id === 'compress') {
-        window.history.pushState({}, '', '/compress');
-      }
+      goToView('wip', toolPath(tool.id), tool);
     }
   };
 
@@ -782,7 +847,7 @@ export default function App() {
               </div>
             </div>
             <div className="flex items-center justify-between text-[8px] font-mono uppercase tracking-wider text-gray-500 group-hover:text-gray-900 transition-colors pt-1.5 border-t border-[#141414]/[0.05] mt-auto z-10">
-              <span className="truncate">Deterministic</span>
+              <span className="truncate">Live</span>
               <ChevronRight size={8} className="transition-transform group-hover:translate-x-0.5 shrink-0 text-gray-400 group-hover:text-black" />
             </div>
           </div>
@@ -809,10 +874,10 @@ export default function App() {
           </h1>
           <div className="space-y-2">
             <h2 className="text-xl font-bold tracking-tight text-[#FF3300]">
-              Surgical tools for every PDF workflow.
+              Simple PDF tools for everyday work.
             </h2>
             <p className="text-sm font-sans text-gray-600 leading-relaxed">
-              A high-performance collection of deterministic PDF utilities running directly in your web browser for complete document confidentiality.
+              Merge, convert, compress, and edit PDFs online. Your file is processed on our server for each job and is not kept afterward.
             </p>
             <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest">
               Release {formatBoltVersion(displayVersion)}
@@ -823,13 +888,25 @@ export default function App() {
           </div>
         </header>
 
+        <OnboardingBanner
+          quickTools={ONBOARDING_QUICK_TOOL_IDS.map((id) => resolveSuiteTool(id))
+            .filter((tool): tool is SuiteTool => tool != null)
+            .map((tool) => ({ id: tool.id, name: tool.name, cleanName: tool.cleanName }))}
+          onOpenTool={(toolId) => {
+            const tool = resolveSuiteTool(toolId);
+            if (tool) {
+              handleToolClick(tool);
+            }
+          }}
+        />
+
         {/* Global Search Center */}
         <div className="max-w-md mx-auto relative">
           <Search size={16} className="absolute left-4 top-3.5 text-gray-500" aria-hidden="true" />
           <input 
             type="text" 
             placeholder="Search all 31 tools..." 
-            aria-label="Search specialized PDF tools"
+            aria-label="Search PDF tools"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-white border border-[#141414]/25 hover:border-[#141414]/40 focus:border-[#FF3300] p-3 pl-12 font-mono text-xs outline-none rounded-lg transition-all shadow-sm focus:ring-2 focus:ring-[#FF3300]/25 focus-visible:border-[#FF3300]"
@@ -896,7 +973,7 @@ export default function App() {
                              t.cleanName.toLowerCase().includes(searchQuery.toLowerCase()) || 
                              t.description.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
                 <div className="col-span-2 text-center py-10 text-xs font-mono text-gray-500 uppercase">
-                  No specialized tools match your query
+                  No tools match your search
                 </div>
               )}
             </div>
@@ -910,7 +987,7 @@ export default function App() {
                   Most Popular Actions
                 </h2>
                 <p className="text-[9px] font-mono text-gray-500 pr-2">
-                  Ranked from successful runs (no database — JSON file on server)
+                  Position reflects how often each tool is used on this server
                 </p>
               </div>
               {renderToolSpotlightGrid(spotlightTools)}
@@ -932,7 +1009,7 @@ export default function App() {
             <div className="flex justify-center pt-4">
               <button 
                 onClick={() => { goToView('directory', '/directory'); setActiveCategory('all'); setSearchQuery(''); }}
-                aria-label="Browse complete catalog directory of 31 PDF tools"
+                aria-label="Browse all PDF tools"
                 className="group flex items-center gap-2 bg-[#141414] text-[#E4E3E0] hover:bg-[#FF3300] px-6 py-3.5 font-mono text-xs uppercase tracking-wider rounded-lg transition-all shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#FF3300]"
               >
                 <span>Browse Complete Suite Directory (31 Tools)</span>
@@ -957,7 +1034,7 @@ export default function App() {
             Complete Suite Directory
           </h1>
           <p className="text-sm font-sans text-gray-600 max-w-xl mx-auto leading-relaxed">
-            A structured catalog of PDF utilities. Live tools run on the PDFBolt server; WIP tools are visible but disabled until ready.
+            Browse all tools below. Live tools run on the PDFBolt server; tools marked WIP are not ready yet.
           </p>
         </header>
 
@@ -966,8 +1043,8 @@ export default function App() {
           <Search size={16} className="absolute left-4 top-3.5 text-gray-500" aria-hidden="true" />
           <input 
             type="text" 
-            placeholder="Filter catalog (e.g., 'word', 'compress', 'sign')..." 
-            aria-label="Filter catalog directory tools"
+            placeholder="Filter tools (e.g. word, compress, sign)..."
+            aria-label="Filter tools in the list"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-white border border-[#141414]/25 hover:border-[#141414]/45 focus:border-[#FF3300] p-3 pl-12 font-mono text-xs outline-none rounded-lg transition-all shadow-sm focus:ring-2 focus:ring-[#FF3300]/20"
@@ -1167,7 +1244,7 @@ export default function App() {
                 <span className={`text-[8px] font-mono tracking-widest px-1.5 py-0.5 font-bold rounded ${
                   isLive ? 'bg-[#FF3300] text-white' : 'bg-amber-500 text-white'
                 }`}>
-                  {isLive ? 'SERVER ENGINE' : 'WORK IN PROGRESS'}
+                  {isLive ? 'LIVE' : 'COMING SOON'}
                 </span>
                 <h2 className="text-3xl font-black tracking-tighter leading-none flex items-center gap-1">
                   <BoltBrand text={selectedWipTool.name} showInfo={toolId === 'replace'} />
@@ -1268,14 +1345,14 @@ export default function App() {
                       placeholder="e.g. 1-2, 5" 
                       className="w-full bg-white border border-[#141414] p-3 font-mono text-xs"
                     />
-                    <p className="text-[9px] text-gray-500 font-mono italic">Specify single indices (e.g. "1") or custom groupings (e.g. "1-3, 5").</p>
+                    <p className="text-[9px] text-gray-500 font-mono italic">Use a single page (e.g. 1) or ranges (e.g. 1-3, 5).</p>
                   </div>
                 )}
 
                 {/* 3. Remove Pages */}
                 {toolId === 'remove-pages' && (
                   <div className="space-y-2">
-                    <label id="remove-pages-lbl" className="text-[10px] font-mono uppercase text-gray-600 font-bold block">Page indices to Purge</label>
+                    <label id="remove-pages-lbl" className="text-[10px] font-mono uppercase text-gray-600 font-bold block">Pages to remove</label>
                     <input 
                       type="text" 
                       value={deletePageStr} 
@@ -1283,7 +1360,7 @@ export default function App() {
                       placeholder="e.g. 2, 4" 
                       className="w-full bg-white border border-[#141414] p-3 font-mono text-xs"
                     />
-                    <p className="text-[9px] text-gray-500 font-mono italic">These pages will be excised completely from the structural tree output.</p>
+                    <p className="text-[9px] text-gray-500 font-mono italic">These page numbers will be removed from your PDF.</p>
                   </div>
                 )}
 
@@ -1521,12 +1598,12 @@ export default function App() {
                 {/* 27. Protect PDF */}
                 {toolId === 'protect-pdf' && (
                   <div className="space-y-2 max-w-sm">
-                    <label id="protect-pass-lbl" className="text-[10px] font-mono uppercase text-gray-600 font-bold block">Document Encryption Password</label>
+                    <label id="protect-pass-lbl" className="text-[10px] font-mono uppercase text-gray-600 font-bold block">Password</label>
                     <input 
                       type="password" 
                       value={protectPass} 
                       onChange={(e) => setProtectPass(e.target.value)}
-                      placeholder="Input protection key..."
+                      placeholder="Enter a password"
                       className="w-full bg-white border border-[#141414] p-3 font-mono text-xs"
                     />
                   </div>
@@ -1536,7 +1613,7 @@ export default function App() {
                 {toolId === 'sign-pdf' && (
                   <div className="space-y-6">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-mono uppercase text-gray-600 font-bold block">Draw your digital signature inside canvas below:</label>
+                      <label className="text-[10px] font-mono uppercase text-gray-600 font-bold block">Draw your signature below:</label>
                       <div className="border border-[#141414] bg-white rounded-lg p-3 inline-block">
                         <canvas 
                           ref={sigCanvasRef}
@@ -1669,19 +1746,19 @@ export default function App() {
                 {toolId === 'repair-pdf' && (
                   <div className="space-y-4 max-w-sm">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-mono uppercase text-gray-600 font-bold block">Recovery Strategy</label>
+                      <label className="text-[10px] font-mono uppercase text-gray-600 font-bold block">Repair method</label>
                       <select 
                         value={repairStrategy} 
                         onChange={(e) => setRepairStrategy(e.target.value)}
                         className="w-full bg-[#FFFFFF] border border-[#141414] p-3 font-mono text-xs outline-none focus:ring-2 focus:ring-[#FF3300]/20"
                       >
-                        <option>Rebuild cross-reference table stream</option>
-                        <option>Synthesize file header tokens</option>
-                        <option>Re-index orphaned visual elements</option>
+                        <option>Rebuild document index (recommended)</option>
+                        <option>Rebuild file header</option>
+                        <option>Re-index page content</option>
                       </select>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-[9px] text-gray-500 font-mono italic">Reconstructs damaged or truncated binary PDF layout markers.</p>
+                      <p className="text-[9px] text-gray-500 font-mono italic">Tries common fixes for damaged or incomplete PDFs.</p>
                     </div>
                   </div>
                 )}
@@ -1695,13 +1772,13 @@ export default function App() {
                         type="password" 
                         value={unlockPassword} 
                         onChange={(e) => setUnlockPassword(e.target.value)}
-                        placeholder="Optional decryption key..."
+                        placeholder="PDF password (if required)"
                         className="w-full bg-white border border-[#141414] p-3 font-mono text-xs outline-none focus:ring-2 focus:ring-[#FF3300]/20"
                       />
                     </div>
                     <div className="space-y-1.5 p-3 bg-amber-50/50 border border-amber-200/50 rounded-sm">
                       <p className="text-[10px] text-amber-800 font-sans leading-relaxed">
-                        <strong>Operational Mode:</strong> Strips password protection layers and prints restrictions. If the file has a master user-open password, supply it above to authorize decryption.
+                        <strong>Note:</strong> Removes password protection and printing restrictions. If the PDF asks for a password to open, enter it above.
                       </p>
                     </div>
                   </div>
@@ -1711,7 +1788,7 @@ export default function App() {
                 {toolId === 'pdf-forms' && (
                   <div className="space-y-4 max-w-sm">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-mono uppercase text-gray-600 font-bold block">Form Interaction Flow</label>
+                      <label className="text-[10px] font-mono uppercase text-gray-600 font-bold block">Form options</label>
                       <div className="flex items-center gap-3">
                         <button 
                           onClick={() => setFormsFlatten(!formsFlatten)}
@@ -1719,10 +1796,10 @@ export default function App() {
                         >
                           {formsFlatten && <CheckCircle2 size={12} />}
                         </button>
-                        <span className="text-xs font-bold uppercase tracking-tighter">Flatten active interactive components</span>
+                        <span className="text-xs font-bold uppercase tracking-tighter">Flatten form fields into the page</span>
                       </div>
                     </div>
-                    <p className="text-[9px] text-gray-500 font-mono italic">Fuses form entry layers directly into the base vector document.</p>
+                    <p className="text-[9px] text-gray-500 font-mono italic">Flattening turns filled-in answers into regular page content so they cannot be edited later.</p>
                   </div>
                 )}
 
@@ -1730,18 +1807,18 @@ export default function App() {
                 {toolId === 'pdf-to-jpg' && (
                   <div className="space-y-4 max-w-sm">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-mono uppercase text-gray-600 font-bold block">Target Output DPI</label>
+                      <label className="text-[10px] font-mono uppercase text-gray-600 font-bold block">Image quality (DPI)</label>
                       <select 
                         value={jpgDpi} 
                         onChange={(e) => setJpgDpi(e.target.value)}
                         className="w-full bg-white border border-[#141414] p-3 font-mono text-xs outline-none focus:ring-2 focus:ring-[#FF3300]/20"
                       >
-                        <option>96 DPI (Screen optimize)</option>
-                        <option>150 DPI (Standard)</option>
-                        <option>300 DPI (High Fidelity Print)</option>
+                        <option>96 DPI (smaller file)</option>
+                        <option>150 DPI (standard)</option>
+                        <option>300 DPI (print quality)</option>
                       </select>
                     </div>
-                    <p className="text-[9px] text-gray-500 font-mono italic">Rasterizes vector graphics into independent compressed JPG/PNG layers.</p>
+                    <p className="text-[9px] text-gray-500 font-mono italic">Higher DPI gives sharper images and larger files.</p>
                   </div>
                 )}
 
@@ -1753,7 +1830,7 @@ export default function App() {
                       Converts your PDF to a real{' '}
                       {toolId === 'pdf-to-word' && 'Word (.docx)'}
                       {toolId === 'pdf-to-powerpoint' && 'PowerPoint (.pptx)'}
-                      {toolId === 'pdf-to-excel' && 'Excel (.xlsx)'} file using the same LibreOffice engine as our Office→PDF tools.
+                      {toolId === 'pdf-to-excel' && 'Excel (.xlsx)'} file using the same conversion service as our Office→PDF tools.
                       Complex layouts and scanned pages may not match the original perfectly; use OCR first for image-only PDFs.
                     </p>
                   </div>
@@ -1763,7 +1840,7 @@ export default function App() {
                 {toolId === 'pdf-to-pdfa' && (
                   <div className="space-y-4 max-w-sm">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-mono uppercase text-gray-600 font-bold block">Conformance Standard</label>
+                      <label className="text-[10px] font-mono uppercase text-gray-600 font-bold block">PDF/A level</label>
                       <select 
                         value={pdfaStandard} 
                         onChange={(e) => setPdfaStandard(e.target.value)}
@@ -1774,7 +1851,7 @@ export default function App() {
                         <option>PDF/A-3b (ISO 19005-3)</option>
                       </select>
                     </div>
-                    <p className="text-[9px] text-gray-500 font-mono italic">Applies mandatory embeddings and strict profiles for long-term archiving standards.</p>
+                    <p className="text-[9px] text-gray-500 font-mono italic">PDF/A is often required for legal and government archives.</p>
                   </div>
                 )}
 
@@ -1822,7 +1899,7 @@ export default function App() {
                         ? 'Choose at least 2 PDFs'
                         : toolId === 'compare-pdf'
                           ? 'Choose both PDFs'
-                          : ['scan-to-pdf', 'jpg-to-pdf'].includes(toolId)
+                          : ['scan-to-pdf', 'images-to-pdf'].includes(toolId)
                             ? 'Choose at least one image'
                             : ['word-to-pdf', 'powerpoint-to-pdf', 'excel-to-pdf'].includes(toolId)
                               ? 'Choose an Office file first'
@@ -1864,12 +1941,12 @@ export default function App() {
         <h2 className="text-5xl font-black tracking-tighter italic text-[#141414]">About PDF<BoltBrand text="bolt" /></h2>
         <div className="prose prose-sm text-[#141414] font-mono leading-relaxed space-y-6 text-xs uppercase tracking-tight">
           <p className="text-sm font-sans normal-case text-gray-600 leading-relaxed font-medium">
-            PDFbolt is a professional-grade suite of localized document utilities engineered for workflows requiring absolute privacy, precision, and speed.
+            PDFbolt is a collection of online PDF tools for common tasks at home and at work—merge, convert, compress, sign, and more.
           </p>
           <div className="space-y-2">
-            <h4 className="font-bold text-[#FF3300] text-xs font-mono uppercase tracking-widest">Byte-Level Stream Precision</h4>
+            <h4 className="font-bold text-[#FF3300] text-xs font-mono uppercase tracking-widest">How it works</h4>
             <p className="font-sans normal-case text-gray-500 text-xs">
-              While standard visual editors rely on cloud servers or flatten document layers into heavy, static images, PDFbolt executes at the binary stream level. Our client-side engines modify layout operands and text instructions directly inside the PDF structure, ensuring original vector scalability and fonts remain fully intact.
+              Live tools upload your file to our server, process it, and return a download. We do not keep your file after the job finishes.
             </p>
           </div>
           <div className="space-y-2">
@@ -1878,16 +1955,33 @@ export default function App() {
               Tools marked <strong className="text-amber-800">WIP</strong> in the directory are not ready yet and cannot be run. <strong className="text-emerald-800">Live</strong> tools run on the PDFBolt server; uploads are processed per request and not kept on disk afterward.
             </p>
           </div>
+          <p className="font-sans normal-case text-gray-500 text-xs">
+            See our{' '}
+            <button type="button" onClick={() => goToView('faq', '/faq')} className="underline font-semibold text-[#FF3300]">
+              Help &amp; FAQ
+            </button>
+            ,{' '}
+            <button type="button" onClick={() => goToView('privacy', '/privacy')} className="underline font-semibold text-[#FF3300]">
+              Privacy policy
+            </button>
+            , and{' '}
+            <button type="button" onClick={() => goToView('terms', '/terms')} className="underline font-semibold text-[#FF3300]">
+              Terms of use
+            </button>
+            .
+          </p>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-8 py-8 border-y border-[#141414]/10">
         <div>
-          <h3 className="font-bold flex items-center gap-2 uppercase tracking-tighter text-[10px]"><ShieldCheck size={18} className="text-[#FF3300]" /> Confidential Execution</h3>
-          <p className="text-xs text-gray-500 mt-2">Live tools send files to the server only for processing. WIP tools stay disabled until fully supported.</p>
+          <h3 className="font-bold flex items-center gap-2 uppercase tracking-tighter text-[10px]"><ShieldCheck size={18} className="text-[#FF3300]" /> Privacy</h3>
+          <p className="text-xs text-gray-500 mt-2">Files are sent to the server only while a tool runs. They are not stored after processing.</p>
         </div>
         <div>
-          <h3 className="font-bold flex items-center gap-2 uppercase tracking-tighter text-[10px]"><Zap size={18} className="text-[#FF3300]" /> Deterministic Engine</h3>
-          <p className="text-xs text-gray-500 mt-2">Precise byte manipulation guarantees original vector styles, hyperlink bindings, and layout elements remain unchanged.</p>
+          <h3 className="font-bold flex items-center gap-2 uppercase tracking-tighter text-[10px]"><Zap size={18} className="text-[#FF3300]" /> Replace text</h3>
+          <p className="text-xs text-gray-500 mt-2 font-sans normal-case leading-relaxed">
+            <strong className="text-[#141414]">bolt replace</strong> swaps words inside the PDF file—the document stays a real PDF with text you can select, not a scanned picture. Layout and fonts usually stay the same; very complex PDFs may need small edits by hand afterward.
+          </p>
         </div>
       </div>
       <button 
@@ -1903,7 +1997,16 @@ export default function App() {
     <div className="p-12 max-w-4xl mx-auto space-y-12">
       <div className="space-y-6">
         <h2 className="text-5xl font-black tracking-tighter italic">Contact Us</h2>
-        <p className="font-mono text-sm text-gray-700 leading-relaxed uppercase tracking-tighter">For inquiries, feature requests, or support, send us a message.</p>
+        <p className="font-sans text-sm text-gray-700 leading-relaxed">
+          For questions, feature requests, or support, use the form below or email us at{' '}
+          <a
+            href={`mailto:${siteConfig.supportEmail}`}
+            className="font-semibold text-[#FF3300] underline hover:text-[#141414]"
+          >
+            {siteConfig.supportEmail}
+          </a>
+          .
+        </p>
       </div>
       
       <form onSubmit={handleContactSubmit} className="grid grid-cols-1 md:grid-cols-1 gap-12">
@@ -1911,27 +2014,27 @@ export default function App() {
           <div className="bg-[#FF3300]/5 border border-[#FF3300]/10 rounded-xl p-5 space-y-2.5">
             <h4 className="text-xs font-mono uppercase tracking-widest font-black text-[#FF3300]">Sponsorship Opportunities</h4>
             <p className="text-xs text-gray-600 font-sans leading-relaxed">
-              Interested in acquiring premier ad slots or horizontal banners inside the PDFbolt workflow suite? Reach thousands of active PDF creators, developers, and writers monthly. Set the subject to <strong className="text-black font-semibold">"Sponsorship Inquiry"</strong> to route quickly.
+              Interested in advertising on PDFbolt? Tell us about your product or service. Use the subject <strong className="text-black font-semibold">Sponsorship Inquiry</strong> so we can find your message quickly.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label id="lbl-name" className="text-[10px] font-mono text-gray-500 font-bold uppercase tracking-widest pl-1">Your Name</label>
-              <input type="text" value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="NAME" aria-labelledby="lbl-name" className="w-full bg-white border border-[#141414] p-3 font-mono text-xs outline-none focus:ring-2 focus:ring-[#FF3300]/30" />
+              <input type="text" value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="Your name" aria-labelledby="lbl-name" className="w-full bg-white border border-[#141414] p-3 font-mono text-xs outline-none focus:ring-2 focus:ring-[#FF3300]/30" />
             </div>
             <div className="space-y-1">
               <label id="lbl-email" className="text-[10px] font-mono text-gray-500 font-bold uppercase tracking-widest pl-1">Your Email</label>
-              <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="EMAIL" aria-labelledby="lbl-email" className="w-full bg-white border border-[#141414] p-3 font-mono text-xs outline-none focus:ring-2 focus:ring-[#FF3300]/30" />
+              <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="you@example.com" aria-labelledby="lbl-email" className="w-full bg-white border border-[#141414] p-3 font-mono text-xs outline-none focus:ring-2 focus:ring-[#FF3300]/30" />
             </div>
           </div>
           <div className="space-y-1">
             <label id="lbl-subj" className="text-[10px] font-mono text-gray-500 font-bold uppercase tracking-widest pl-1">Subject</label>
-            <input type="text" value={contactSubject} onChange={(e) => setContactSubject(e.target.value)} placeholder="SUBJECT" aria-labelledby="lbl-subj" className="w-full bg-white border border-[#141414] p-3 font-mono text-xs outline-none focus:ring-2 focus:ring-[#FF3300]/30" />
+            <input type="text" value={contactSubject} onChange={(e) => setContactSubject(e.target.value)} placeholder="What is this about?" aria-labelledby="lbl-subj" className="w-full bg-white border border-[#141414] p-3 font-mono text-xs outline-none focus:ring-2 focus:ring-[#FF3300]/30" />
           </div>
           <div className="space-y-1">
             <label id="lbl-msg" className="text-[10px] font-mono text-gray-500 font-bold uppercase tracking-widest pl-1">Message</label>
-            <textarea value={contactMessage} onChange={(e) => setContactMessage(e.target.value)} rows={6} placeholder="MESSAGE DATA..." aria-labelledby="lbl-msg" className="w-full bg-white border border-[#141414] p-3 font-mono text-xs outline-none focus:ring-2 focus:ring-[#FF3300]/30 resize-none" />
+            <textarea value={contactMessage} onChange={(e) => setContactMessage(e.target.value)} rows={6} placeholder="Your message" aria-labelledby="lbl-msg" className="w-full bg-white border border-[#141414] p-3 font-mono text-xs outline-none focus:ring-2 focus:ring-[#FF3300]/30 resize-none" />
           </div>
           {contactStatus && (
             <p className={`text-xs font-mono ${contactStatus.type === 'ok' ? 'text-green-700' : 'text-red-600'}`} role="status">
@@ -1963,13 +2066,13 @@ export default function App() {
           </div>
           <div className="space-y-1">
             <span className="text-[8px] font-mono tracking-widest bg-[#FF3300] text-white px-1.5 py-0.5 font-bold rounded">
-              SERVER ENGINE
+              LIVE
             </span>
             <h2 className="text-3xl font-black tracking-tighter leading-none flex items-center gap-1">
               <BoltBrand text="bolt replace" showInfo />
             </h2>
             <p className="text-xs text-gray-500 font-sans">
-              Replace text inside PDF content streams and download the edited file.
+              Find and replace text in your PDF, then download the updated file.
             </p>
           </div>
         </div>
@@ -2007,6 +2110,7 @@ export default function App() {
               labelId="pdf-file-label"
               chooseLabel={`Choose PDF for ${boltToolName('replace')}`}
             />
+            <UploadLimitsNote limits={siteConfig.limits} toolId="replace" />
             {fileUploadFeedback && (
               <p
                 className={`text-[10px] font-mono ${fileUploadFeedback.type === 'ok' ? 'text-emerald-700' : 'text-red-600'}`}
@@ -2134,7 +2238,7 @@ export default function App() {
                  >
                    {pairs.every(p => p.strict) && <CheckCircle2 size={12} />}
                  </button>
-                 <span className="text-xs font-bold uppercase tracking-tighter">Strict same-length mode</span>
+                 <span className="text-xs font-bold uppercase tracking-tighter">Same-length replacement only</span>
                </div>
 
                <div className="flex items-center gap-3">
@@ -2182,10 +2286,10 @@ export default function App() {
           <button 
             disabled={!file || isProcessing || pdfGate.passwordBlocked || !pairs.some((p) => p.find.trim())}
             onClick={handleRunReplacement}
-            aria-label={isProcessing ? "Processing PDF stream. Please wait." : "Execute text replacement and download final PDF"}
+            aria-label={isProcessing ? "Processing PDF. Please wait." : "Replace text and download PDF"}
             className={`w-full py-8 font-black text-2xl uppercase tracking-tighter transition-all shadow-[8px_8px_0px_#141414] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none border-2 border-[#141414] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3300] focus-visible:ring-offset-2 ${!file || isProcessing || pdfGate.passwordBlocked || !pairs.some((p) => p.find.trim()) ? 'bg-[#DCDAD5] text-neutral-600 cursor-not-allowed border-2 border-[#141414]/40 shadow-none translate-none' : 'bg-[#FF3300] text-white hover:bg-[#141414] hover:shadow-[8px_8px_0px_#FF3300]'}`}
           >
-            {isProcessing ? 'Processing Stream...' : 'Replace and Download'}
+            {isProcessing ? 'Processing…' : 'Replace and Download'}
           </button>
 
         </div>
@@ -2246,6 +2350,14 @@ export default function App() {
               About
             </button>
             <button 
+              onClick={() => goToView('faq', '/faq')} 
+              role="tab"
+              aria-selected={currentView === 'faq'}
+              className={`text-[10px] font-mono uppercase tracking-widest hover:text-[#FF3300] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3300] focus-visible:ring-offset-2 ${currentView === 'faq' ? 'text-[#FF3300] font-bold underline decoration-2 underline-offset-4' : ''}`}
+            >
+              FAQ
+            </button>
+            <button 
               onClick={() => goToView('contact', '/contact')} 
               role="tab"
               aria-selected={currentView === 'contact'}
@@ -2256,14 +2368,6 @@ export default function App() {
           </div>
         </div>
         
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${file ? 'bg-[#FF3300]' : 'bg-gray-400'}`} aria-hidden="true" />
-            <span className="font-mono text-[9px] uppercase text-gray-500 font-bold hidden sm:inline tracking-widest">
-              {file ? 'File Loaded' : 'No File'}
-            </span>
-          </div>
-        </div>
       </nav>
 
       <main className="flex-1 relative z-10">
@@ -2303,22 +2407,50 @@ export default function App() {
               {renderContact()}
             </motion.div>
           )}
+
+          {currentView === 'privacy' && (
+            <motion.div key="privacy" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <LegalPrivacy onBack={() => goToView('dashboard', '/')} />
+            </motion.div>
+          )}
+
+          {currentView === 'terms' && (
+            <motion.div key="terms" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <LegalTerms onBack={() => goToView('dashboard', '/')} />
+            </motion.div>
+          )}
+
+          {currentView === 'faq' && (
+            <motion.div key="faq" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <LegalFaq onBack={() => goToView('dashboard', '/')} />
+            </motion.div>
+          )}
+
+          {currentView === 'status' && (
+            <motion.div key="status" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <StatusPage onBack={() => goToView('dashboard', '/')} />
+            </motion.div>
+          )}
+
+          {currentView === 'not-found' && (
+            <motion.div key="not-found" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <NotFound
+                onHome={() => goToView('dashboard', '/')}
+                onDirectory={() => goToView('directory', '/directory')}
+              />
+            </motion.div>
+          )}
         </AnimatePresence>
       </main>
 
-      <footer className="h-10 border-t border-[#141414] bg-[#141414] text-[9px] text-[#E4E3E0]/50 font-mono px-6 flex items-center justify-between uppercase tracking-widest">
-        <div className="flex gap-6">
-          <span>
-            Engine: <BoltBrand text={`bolt-v${displayVersion}`} />
-          </span>
-          {versionMismatch && (
-            <span className="text-amber-400 normal-case tracking-normal" title={`UI was built as ${buildVersion}`}>
-              UI/API version mismatch
-            </span>
-          )}
-        </div>
-        <div>PDF<BoltBrand text="bolt" /> © 2026</div>
-      </footer>
+      <SiteFooter
+        displayVersion={displayVersion}
+        versionMismatch={versionMismatch}
+        buildVersion={buildVersion}
+        onNavigate={(path, view) => goToView(view, path)}
+      />
+
+      <CookieNotice onPrivacy={() => goToView('privacy', '/privacy')} />
 
       <style dangerouslySetInnerHTML={{ __html: `
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700&family=Playfair+Display:ital@1&display=swap');

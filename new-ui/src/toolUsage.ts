@@ -1,3 +1,5 @@
+import { canonicalToolId } from './toolIdAliases';
+
 /** Default home spotlight when no server stats exist yet. */
 export const DEFAULT_POPULAR_TOOL_IDS = [
   'replace',
@@ -43,7 +45,7 @@ function writeLocal(data: LocalToolUsage): void {
 }
 
 export function recordLocalToolUse(toolId: string): void {
-  const id = toolId.trim().toLowerCase().replace(/_/g, '-');
+  const id = canonicalToolId(toolId);
   if (!id) {
     return;
   }
@@ -66,7 +68,9 @@ export async function fetchPopularToolIds(limit = 8): Promise<string[]> {
     const payload = (await response.json()) as {
       tools?: { toolId: string; count: number }[];
     };
-    const ids = (payload.tools ?? []).map((t) => t.toolId).filter(Boolean);
+    const ids = (payload.tools ?? [])
+      .map((t) => canonicalToolId(t.toolId))
+      .filter(Boolean);
     return ids.length > 0 ? ids : [...DEFAULT_POPULAR_TOOL_IDS];
   } catch {
     return [...DEFAULT_POPULAR_TOOL_IDS];
@@ -109,7 +113,8 @@ export function onToolRunSuccess(toolId: string, options?: { syncServer?: boolea
 export function mergePopularLists(serverIds: string[], localRecent: string[], limit = 8): string[] {
   const merged: string[] = [];
   const seen = new Set<string>();
-  for (const id of [...serverIds, ...localRecent, ...DEFAULT_POPULAR_TOOL_IDS]) {
+  for (const raw of [...serverIds, ...localRecent, ...DEFAULT_POPULAR_TOOL_IDS]) {
+    const id = canonicalToolId(raw);
     if (seen.has(id)) {
       continue;
     }

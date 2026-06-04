@@ -48,6 +48,7 @@ public class HealthController {
         deps.put("ghostscript", ghostscriptOk);
         deps.put("verapdf", verapdfOk);
         deps.put("pdfaValidationEnabled", pdfaValidate);
+        deps.put("heic", HeicSupport.isAvailable());
         deps.put("ready", libreOfficeOk && ghostscriptOk);
         return deps;
     }

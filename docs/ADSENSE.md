@@ -39,3 +39,23 @@ If you use nginx, proxy `/ads.txt` to the app — see [deploy/nginx-mypdfbolt.sh
 - Banner loads config from `GET /api/public/ads-config`.
 - If Google does not fill the slot within ~5s, sponsor mock banners show.
 - Without `ADSENSE_BANNER_SLOT`, only mocks run (no empty AdSense box).
+
+## If AdSense says “Site down” or policy issues
+
+1. **Site must return 200** (not 500 JSON) on:
+   ```bash
+   curl -sS -o /dev/null -w "%{http_code}\n" https://mypdfbolt.shop/
+   curl -sS -o /dev/null -w "%{http_code}\n" https://mypdfbolt.shop/privacy
+   curl -sS -o /dev/null -w "%{http_code}\n" https://mypdfbolt.shop/terms
+   curl -sS -o /dev/null -w "%{http_code}\n" https://mypdfbolt.shop/robots.txt
+   curl -sS -o /dev/null -w "%{http_code}\n" https://mypdfbolt.shop/ads.txt
+   ```
+   Expect `200` for all. `/privacy` must return **HTML** mentioning cookies/AdSense.
+
+2. **Redeploy** after `git pull` and `docker build` — an old container can leave `/privacy` and `/robots.txt` broken while `/` still works.
+
+3. **ads.txt** in AdSense → Sites → must show **Authorised** for `pub-3054286166063522`.
+
+4. **Nginx** must proxy the whole site to the app (see `deploy/nginx-mypdfbolt.shop.example`), including `/ads.txt`.
+
+5. After fixes, use AdSense → **Request review**. “Site down” is often from a crawl when the server was stopped or those URLs returned errors.

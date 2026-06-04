@@ -130,6 +130,6 @@ describe('postContactInquiry', () => {
         subject: 'S',
         message: 'M',
       }),
-    ).rejects.toThrow('SMTP not configured');
+    ).rejects.toThrow(/could not send your message/i);
   });
 });

@@ -136,7 +136,7 @@ export interface ServerToolContext {
 
 const OFFICE_FILE_TOOLS = new Set(['word-to-pdf', 'powerpoint-to-pdf', 'excel-to-pdf']);
 
-const IMAGE_ONLY_TOOLS = new Set(['scan-to-pdf', 'jpg-to-pdf']);
+const IMAGE_ONLY_TOOLS = new Set(['scan-to-pdf', 'images-to-pdf']);
 
 function parseDpiLabel(raw: string): number {
   const match = raw.match(/(\d+)/);

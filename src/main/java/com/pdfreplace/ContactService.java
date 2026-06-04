@@ -52,10 +52,8 @@ public class ContactService {
         }
 
         if (mailHost == null || mailHost.isBlank()) {
-            throw new IllegalArgumentException(
-                    "Contact email is not configured: SMTP_HOST is empty. Copy .env.example to .env, set "
-                            + "SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD, and MAIL_FROM. "
-                            + "For local testing without SMTP, set CONTACT_LOG_ONLY=true."
+            throw new IllegalStateException(
+                    "Contact form is temporarily unavailable. Please email us using the address on this page."
             );
         }
 
@@ -72,8 +70,7 @@ public class ContactService {
         } catch (MailException exception) {
             log.warn("SMTP send failed: {}", exception.toString());
             throw new IllegalStateException(
-                    "Unable to send inquiry email. Check SMTP settings (SMTP_HOST, SMTP_PORT, SMTP_USERNAME, "
-                            + "SMTP_PASSWORD, MAIL_FROM). For Gmail use an App Password for SMTP_PASSWORD.",
+                    "We could not send your message right now. Please try again later or email us directly.",
                     exception
             );
         }
