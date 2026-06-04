@@ -6,7 +6,7 @@ import { BoltBrand } from '../components/BoltBrand';
 import { ToolSpotlightGrid } from '../components/ToolSpotlightGrid';
 import { formatBoltVersion } from '../appVersion';
 import { isToolLive } from '../toolStatus';
-import { CATEGORIES, resolveSuiteTool, type SuiteTool } from '../suiteCatalog';
+import { CATEGORIES, resolveSuiteTool, SUITE_TOOL_COUNT, type SuiteTool } from '../suiteCatalog';
 
 export function DashboardPage({
   popularToolIds,
@@ -78,7 +78,7 @@ export function DashboardPage({
         <Search size={16} className="absolute left-4 top-3.5 text-gray-500" aria-hidden="true" />
         <input
           type="text"
-          placeholder="Search all 31 tools..."
+          placeholder={`Search all ${SUITE_TOOL_COUNT} tools...`}
           aria-label="Search PDF tools"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -191,7 +191,7 @@ export function DashboardPage({
               aria-label="Browse all PDF tools"
               className="group flex items-center gap-2 bg-[#141414] text-[#E4E3E0] hover:bg-[#FF3300] px-6 py-3.5 font-mono text-xs uppercase tracking-wider rounded-lg transition-all shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#FF3300]"
             >
-              <span>Browse all 31 tools</span>
+              <span>Browse all {SUITE_TOOL_COUNT} tools</span>
               <ChevronRight size={14} className="transition-transform group-hover:translate-x-1" />
             </button>
           </div>

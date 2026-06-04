@@ -84,6 +84,7 @@ const AD_PRESETS: AdPreset[] = [
 function AdChrome({
   label,
   className,
+  dismissible = true,
   onDismiss,
   showInfo,
   onToggleInfo,
@@ -91,6 +92,7 @@ function AdChrome({
 }: {
   label: string;
   className?: string;
+  dismissible?: boolean;
   onDismiss: () => void;
   showInfo: boolean;
   onToggleInfo: () => void;
@@ -117,15 +119,17 @@ function AdChrome({
             >
               <Info size={11} />
             </button>
-            <button
-              type="button"
-              onClick={onDismiss}
-              title="Hide ad"
-              aria-label="Dismiss advertisement"
-              className="opacity-60 hover:opacity-100 p-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
-            >
-              <X size={11} />
-            </button>
+            {dismissible && (
+              <button
+                type="button"
+                onClick={onDismiss}
+                title="Hide ad"
+                aria-label="Dismiss advertisement"
+                className="opacity-60 hover:opacity-100 p-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+              >
+                <X size={11} />
+              </button>
+            )}
           </div>
         </div>
         {children}
@@ -237,23 +241,19 @@ function AdInfoPanel({ onReport, onClose }: { onReport: () => void; onClose: () 
 
 export function BannerAd({ className = '', onInquire }: { className?: string; onInquire?: () => void }) {
   const adsConfig = useAdsenseConfig();
-  const [isDismissed, setIsDismissed] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
-  const [reported, setReported] = useState(false);
   const [presetIdx, setPresetIdx] = useState(0);
   const [liveUnfilled, setLiveUnfilled] = useState(false);
   const bannerSlot = slotForResolvedConfig(adsConfig, 'banner');
   const tryLiveAd = shouldShowLiveAd(adsConfig, 'banner') && !liveUnfilled;
 
   useEffect(() => {
-    if (tryLiveAd || reported || showInfo) return;
+    if (tryLiveAd || showInfo) return;
     const interval = setInterval(() => {
       setPresetIdx((prev) => (prev + 1) % AD_PRESETS.length);
     }, 12000);
     return () => clearInterval(interval);
-  }, [tryLiveAd, reported, showInfo]);
-
-  if (isDismissed) return null;
+  }, [tryLiveAd, showInfo]);
 
   const ad = AD_PRESETS[presetIdx];
 
@@ -261,18 +261,13 @@ export function BannerAd({ className = '', onInquire }: { className?: string; on
     <AdChrome
       className={className}
       label={tryLiveAd ? 'Google AdSense' : ad.sponsor}
-      onDismiss={() => setIsDismissed(true)}
+      dismissible={false}
+      onDismiss={() => {}}
       showInfo={showInfo}
       onToggleInfo={() => setShowInfo((v) => !v)}
     >
-      {reported ? (
-        <div className="py-4 text-center space-y-2" role="alert">
-          <ShieldAlert size={18} className="mx-auto text-orange-500" />
-          <p className="text-xs font-mono uppercase font-bold">Feedback received</p>
-          <p className="text-xs text-gray-600">This ad is hidden for this session.</p>
-        </div>
-      ) : showInfo ? (
-        <AdInfoPanel onReport={() => setReported(true)} onClose={() => setShowInfo(false)} />
+      {showInfo ? (
+        <AdInfoPanel onReport={() => setShowInfo(false)} onClose={() => setShowInfo(false)} />
       ) : tryLiveAd ? (
         <AdSenseUnit
           slot={bannerSlot}

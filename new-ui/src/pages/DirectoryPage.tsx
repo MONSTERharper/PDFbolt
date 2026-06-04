@@ -3,7 +3,7 @@ import { Search, ChevronRight } from 'lucide-react';
 import { BannerAd } from '../components/AdPlacement';
 import { BoltBrand } from '../components/BoltBrand';
 import { isToolLive } from '../toolStatus';
-import { CATEGORIES, type SuiteCategory, type SuiteTool } from '../suiteCatalog';
+import { CATEGORIES, SUITE_TOOL_COUNT, type SuiteCategory, type SuiteTool } from '../suiteCatalog';
 
 export function DirectoryPage({
   searchQuery,
@@ -33,7 +33,7 @@ export function DirectoryPage({
           All Tools
         </h1>
         <p className="text-sm font-sans text-gray-600 max-w-xl mx-auto leading-relaxed">
-          All 31 tools in one place. Live tools are ready to use; WIP tools are still being built.
+          All {SUITE_TOOL_COUNT} tools in one place. Live tools are ready to use; WIP tools are still being built.
         </p>
       </header>
 

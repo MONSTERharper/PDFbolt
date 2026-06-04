@@ -147,6 +147,8 @@ export const CATEGORIES: SuiteCategory[] = [
   },
 ];
 
+export const SUITE_TOOL_COUNT = CATEGORIES.reduce((count, category) => count + category.tools.length, 0);
+
 export function resolveSuiteTool(id: string): SuiteTool | null {
   const toolId = canonicalToolId(id);
   if (toolId === 'replace') {
