@@ -93,6 +93,42 @@ class NeubergApiReplaceTest {
         assertFalse(text.contains("5550100000"), () -> text);
     }
 
+    @Test
+    void apiKeepsBothFallbackReplacementsAcrossSequentialRules() throws Exception {
+        File sample = new File("src/test/resources/neuberg-sarvesh-sample.pdf");
+        if (!sample.isFile()) {
+            return;
+        }
+        byte[] pdfBytes = Files.readAllBytes(sample.toPath());
+        MockMultipartFile file = new MockMultipartFile(
+                "files",
+                "7338566739.pdf",
+                MediaType.APPLICATION_PDF_VALUE,
+                pdfBytes
+        );
+
+        MvcResult result = mockMvc.perform(multipart("/api/replace")
+                        .file(file)
+                        .param("search", "JOHN DOE", "10000000001")
+                        .param("replacement", "JANE DOE", "88888888888")
+                        .param("matchMode", "exact")
+                        .param("replaceScope", "all")
+                        .param("strict", "false")
+                        .param("preserveStyle", "true")
+                        .param("retainMetadata", "true"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("X-Bolt-Replacer-Matches", "2"))
+                .andExpect(header().string("X-Bolt-Replacer-Validation", "passed"))
+                .andExpect(header().string("X-Bolt-Replacer-Rules-Validated", "2"))
+                .andReturn();
+
+        String text = extractText(result.getResponse().getContentAsByteArray());
+        assertTrue(text.contains("JANE DOE"), () -> text);
+        assertTrue(text.contains("88888888888"), () -> text);
+        assertFalse(text.contains("JOHN DOE"), () -> text);
+        assertFalse(text.contains("10000000001"), () -> text);
+    }
+
     private static String extractText(byte[] pdfBytes) throws Exception {
         try (PDDocument document = PDDocument.load(pdfBytes)) {
             return new PDFTextStripper().getText(document).replace('\n', ' ');

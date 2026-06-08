@@ -185,8 +185,6 @@ public final class DeterministicPdfReplacer {
         try (PDDocument document = PDDocument.load(input)) {
             MetadataSnapshot metadataSnapshot = retainMetadata ? captureMetadata(document) : null;
             PDType0Font substituteFont = loadSubstituteFont(document, substituteFontFile, replacement);
-            COSName substituteFontName = COSName.getPDFName("FSubPdfReplace");
-
             for (PDPage page : document.getPages()) {
                 pagesScanned++;
 
@@ -232,6 +230,7 @@ public final class DeterministicPdfReplacer {
                     }
                 }
 
+                COSName substituteFontName = uniqueFontResourceName(page.getResources(), "FSubPdfReplace");
                 applyDynamicReplacementDraws(page, tokens, segments, substituteFontName, pageSubstituteFont);
                 if (pageSubstituteFont != null) {
                     applySubstituteFontSwitches(page, tokens, segments, substituteFontName, pageSubstituteFont);
@@ -1580,6 +1579,31 @@ public final class DeterministicPdfReplacer {
             LOGGER.debug("Substitute font cannot encode replacement, skipping {}: {}", candidate.getAbsolutePath(), e.getMessage());
             return null;
         }
+    }
+
+    private static COSName uniqueFontResourceName(PDResources resources, String baseName) {
+        if (resources == null) {
+            return COSName.getPDFName(baseName);
+        }
+        COSName candidate = COSName.getPDFName(baseName);
+        if (!hasFontResource(resources, candidate)) {
+            return candidate;
+        }
+        int suffix = 1;
+        do {
+            candidate = COSName.getPDFName(baseName + suffix);
+            suffix++;
+        } while (hasFontResource(resources, candidate));
+        return candidate;
+    }
+
+    private static boolean hasFontResource(PDResources resources, COSName fontName) {
+        for (COSName existing : resources.getFontNames()) {
+            if (existing.equals(fontName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.pdfreplace;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDResources;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.pdfparser.PDFStreamParser;
@@ -303,6 +304,42 @@ class DeterministicPdfReplacerTest {
         assertTrue(hasSubstituteFontResource(output));
     }
 
+    @Test
+    void keepsPriorSubstituteFontWhenApplyingSequentialReplacements() throws Exception {
+        File input = new File("src/test/resources/neuberg-sarvesh-sample.pdf");
+        Assumptions.assumeTrue(input.isFile(), "sample PDF missing");
+        File first = tempDir.resolve("neuberg-first-out.pdf").toFile();
+        File second = tempDir.resolve("neuberg-second-out.pdf").toFile();
+
+        DeterministicPdfReplacer.replace(
+                input,
+                first,
+                "JOHN DOE",
+                "QZXV",
+                false,
+                null,
+                DeterministicPdfReplacer.MatchMode.EXACT,
+                DeterministicPdfReplacer.ReplaceScope.ALL,
+                null
+        );
+        DeterministicPdfReplacer.replace(
+                first,
+                second,
+                "10000000001",
+                "88888888888",
+                false,
+                null,
+                DeterministicPdfReplacer.MatchMode.EXACT,
+                DeterministicPdfReplacer.ReplaceScope.ALL,
+                null
+        );
+
+        String text = extractText(second);
+        assertTrue(text.contains("QZXV"), () -> "output text: " + text);
+        assertTrue(text.contains("88888888888"), () -> "output text: " + text);
+        assertTrue(countSubstituteFontResources(second) >= 2);
+    }
+
     private static boolean hasSubstituteFontResource(File pdfFile) throws Exception {
         List<Object> tokens = tokensFirstPage(pdfFile);
         boolean sawSubstituteName = false;
@@ -316,6 +353,22 @@ class DeterministicPdfReplacerTest {
             }
         }
         return sawSubstituteName && sawSubstituteTf;
+    }
+
+    private static int countSubstituteFontResources(File pdfFile) throws Exception {
+        try (PDDocument document = PDDocument.load(pdfFile)) {
+            PDResources resources = document.getPage(0).getResources();
+            if (resources == null) {
+                return 0;
+            }
+            int count = 0;
+            for (COSName fontName : resources.getFontNames()) {
+                if (fontName.getName().startsWith("FSubPdfReplace")) {
+                    count++;
+                }
+            }
+            return count;
+        }
     }
 
     @Test

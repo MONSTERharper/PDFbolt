@@ -117,6 +117,9 @@ class PdfReplaceControllerTest {
                 .andExpect(header().exists("X-Bolt-Replacer-Matches-Found"))
                 .andExpect(header().exists("X-Bolt-Replacer-Style-Preserved"))
                 .andExpect(header().exists("X-Bolt-Replacer-Style-Fallback"))
+                .andExpect(header().string("X-Bolt-Replacer-Validation", "passed"))
+                .andExpect(header().string("X-Bolt-Replacer-Rules-Validated", "1"))
+                .andExpect(header().string("X-Bolt-Replacer-Validation-Warnings", "1"))
                 .andExpect(content().contentType(MediaType.APPLICATION_PDF));
     }
 }

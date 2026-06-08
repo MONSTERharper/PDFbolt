@@ -1,6 +1,7 @@
 package com.pdfreplace;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -72,6 +73,7 @@ public class PdfReplaceService {
 
         List<ReplacementOutput> outputs = new ArrayList<>();
         DeterministicPdfReplacer.Result summary = new DeterministicPdfReplacer.Result(0, 0, 0, 0, occurrenceIndex, 0, 0);
+        ValidationReport validationSummary = ValidationReport.empty();
         int totalPagesProcessed = 0;
         for (int i = 0; i < pdfFiles.length; i++) {
             MultipartFile pdf = pdfFiles[i];
@@ -99,11 +101,12 @@ public class PdfReplaceService {
                     summary.stylePreservedCount() + item.result().stylePreservedCount(),
                     summary.fallbackStyleCount() + item.result().fallbackStyleCount()
             );
+            validationSummary = validationSummary.merge(item.validation());
         }
 
         if (outputs.size() == 1) {
             ReplacementOutput only = outputs.get(0);
-            return new BatchReplacementOutput(only.filename(), only.bytes(), "application/pdf", summary);
+            return new BatchReplacementOutput(only.filename(), only.bytes(), "application/pdf", summary, validationSummary);
         }
 
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -116,7 +119,7 @@ public class PdfReplaceService {
                 zip.closeEntry();
             }
         }
-        return new BatchReplacementOutput("bolt_batch_replaced.zip", bytes.toByteArray(), "application/zip", summary);
+        return new BatchReplacementOutput("bolt_batch_replaced.zip", bytes.toByteArray(), "application/zip", summary, validationSummary);
     }
 
     private ReplacementOutput replaceSingle(
@@ -142,44 +145,53 @@ public class PdfReplaceService {
                 stageInput = opened.path();
 
                 DeterministicPdfReplacer.Result aggregate = new DeterministicPdfReplacer.Result(0, 0, 0, 0, occurrenceIndex, 0, 0);
-            for (int i = 0; i < rules.size(); i++) {
-                ReplacementRule rule = rules.get(i);
-                stageOutput = workDir.resolve("output-" + i + ".pdf");
-                try {
-                    DeterministicPdfReplacer.Result result = DeterministicPdfReplacer.replace(
-                            stageInput.toFile(),
-                            stageOutput.toFile(),
-                            rule.search(),
-                            rule.replacement(),
-                            strict,
-                            null,
-                            matchMode,
-                            replaceScope,
-                            occurrenceIndex,
-                            preserveStyle,
-                            retainMetadata
-                    );
-                    aggregate = new DeterministicPdfReplacer.Result(
-                            aggregate.pagesScanned() + result.pagesScanned(),
-                            aggregate.matchesFound() + result.matchesFound(),
-                            aggregate.matchesReplaced() + result.matchesReplaced(),
-                            aggregate.segmentsChanged() + result.segmentsChanged(),
-                            occurrenceIndex,
-                            aggregate.stylePreservedCount() + result.stylePreservedCount(),
-                            aggregate.fallbackStyleCount() + result.fallbackStyleCount()
-                    );
-                } catch (IOException ex) {
-                    throw wrapReplaceIOException(pdf, i, rule, ex);
+                List<AppliedReplacementRule> appliedRules = new ArrayList<>();
+                for (int i = 0; i < rules.size(); i++) {
+                    ReplacementRule rule = rules.get(i);
+                    stageOutput = workDir.resolve("output-" + i + ".pdf");
+                    try {
+                        DeterministicPdfReplacer.Result result = DeterministicPdfReplacer.replace(
+                                stageInput.toFile(),
+                                stageOutput.toFile(),
+                                rule.search(),
+                                rule.replacement(),
+                                strict,
+                                null,
+                                matchMode,
+                                replaceScope,
+                                occurrenceIndex,
+                                preserveStyle,
+                                retainMetadata
+                        );
+                        aggregate = new DeterministicPdfReplacer.Result(
+                                aggregate.pagesScanned() + result.pagesScanned(),
+                                aggregate.matchesFound() + result.matchesFound(),
+                                aggregate.matchesReplaced() + result.matchesReplaced(),
+                                aggregate.segmentsChanged() + result.segmentsChanged(),
+                                occurrenceIndex,
+                                aggregate.stylePreservedCount() + result.stylePreservedCount(),
+                                aggregate.fallbackStyleCount() + result.fallbackStyleCount()
+                        );
+                        if (result.matchesReplaced() > 0) {
+                            appliedRules.add(new AppliedReplacementRule(i + 1, rule, result));
+                        }
+                    } catch (IOException ex) {
+                        throw wrapReplaceIOException(pdf, i, rule, ex);
+                    }
+                    stageInput = stageOutput;
                 }
-                stageInput = stageOutput;
-            }
 
                 if (aggregate.matchesReplaced() == 0) {
                     throw new IllegalArgumentException("No matching text was found in the PDF.");
                 }
 
+                ValidationReport validation = validateOutput(stageInput, appliedRules, matchMode, replaceScope);
+                if (!validation.passed()) {
+                    throw new IOException(validationFailureMessage(pdf, validation));
+                }
+
                 String outputName = outputName(pdf.getOriginalFilename());
-                return new ReplacementOutput(outputName, Files.readAllBytes(stageInput), aggregate);
+                return new ReplacementOutput(outputName, Files.readAllBytes(stageInput), aggregate, validation);
             }
         } finally {
             deleteIfExists(stageOutput);
@@ -383,13 +395,92 @@ public class PdfReplaceService {
         return oneLine.length() <= 72 ? oneLine : oneLine.substring(0, 72) + "…";
     }
 
-    public record ReplacementOutput(String filename, byte[] bytes, DeterministicPdfReplacer.Result result) {
+    private static ValidationReport validateOutput(
+            Path pdf,
+            List<AppliedReplacementRule> appliedRules,
+            DeterministicPdfReplacer.MatchMode matchMode,
+            DeterministicPdfReplacer.ReplaceScope replaceScope
+    ) throws IOException {
+        String outputText = extractText(pdf);
+        List<String> failures = new ArrayList<>();
+        List<String> warnings = new ArrayList<>();
+
+        for (AppliedReplacementRule applied : appliedRules) {
+            ReplacementRule rule = applied.rule();
+            if (!rule.replacement().isEmpty() && !contains(outputText, rule.replacement(), matchMode)) {
+                failures.add("rule " + applied.index() + " replacement text is not extractable: ["
+                        + previewForLog(rule.replacement()) + "]");
+            }
+            if (replaceScope == DeterministicPdfReplacer.ReplaceScope.ALL && contains(outputText, rule.search(), matchMode)) {
+                failures.add("rule " + applied.index() + " search text is still extractable after replace-all: ["
+                        + previewForLog(rule.search()) + "]");
+            } else if (replaceScope != DeterministicPdfReplacer.ReplaceScope.ALL && contains(outputText, rule.search(), matchMode)) {
+                warnings.add("rule " + applied.index() + " search text remains because scope is " + replaceScope.name().toLowerCase(Locale.ROOT));
+            }
+            if (applied.result().fallbackStyleCount() > 0) {
+                warnings.add("rule " + applied.index() + " used fallback font for "
+                        + applied.result().fallbackStyleCount() + " segment(s)");
+            }
+        }
+
+        return new ValidationReport(failures.isEmpty(), appliedRules.size(), failures, warnings);
     }
 
-    public record BatchReplacementOutput(String filename, byte[] bytes, String contentType, DeterministicPdfReplacer.Result summary) {
+    private static String extractText(Path pdf) throws IOException {
+        try (PDDocument document = PDDocument.load(pdf.toFile())) {
+            return new PDFTextStripper().getText(document);
+        }
+    }
+
+    private static boolean contains(String haystack, String needle, DeterministicPdfReplacer.MatchMode matchMode) {
+        if (needle == null || needle.isEmpty()) {
+            return true;
+        }
+        if (matchMode == DeterministicPdfReplacer.MatchMode.CASE_INSENSITIVE
+                || matchMode == DeterministicPdfReplacer.MatchMode.CASE_INSENSITIVE_WHOLE_WORD) {
+            return haystack.toLowerCase(Locale.ROOT).contains(needle.toLowerCase(Locale.ROOT));
+        }
+        return haystack.contains(needle);
+    }
+
+    private static String validationFailureMessage(MultipartFile pdf, ValidationReport validation) {
+        String fileLabel = safeFilename(pdf.getOriginalFilename());
+        return "PDF replacement validation failed (" + fileLabel + "). "
+                + "The PDF was edited, but the output text did not validate: "
+                + String.join("; ", validation.failures())
+                + ". Try a simpler replacement, turn off preserve style, or export/repair the PDF and retry.";
+    }
+
+    public record ReplacementOutput(String filename, byte[] bytes, DeterministicPdfReplacer.Result result, ValidationReport validation) {
+    }
+
+    public record BatchReplacementOutput(
+            String filename,
+            byte[] bytes,
+            String contentType,
+            DeterministicPdfReplacer.Result summary,
+            ValidationReport validation
+    ) {
+    }
+
+    public record ValidationReport(boolean passed, int rulesValidated, List<String> failures, List<String> warnings) {
+        static ValidationReport empty() {
+            return new ValidationReport(true, 0, List.of(), List.of());
+        }
+
+        ValidationReport merge(ValidationReport other) {
+            List<String> mergedFailures = new ArrayList<>(failures);
+            mergedFailures.addAll(other.failures);
+            List<String> mergedWarnings = new ArrayList<>(warnings);
+            mergedWarnings.addAll(other.warnings);
+            return new ValidationReport(passed && other.passed, rulesValidated + other.rulesValidated, mergedFailures, mergedWarnings);
+        }
     }
 
     private record ReplacementRule(String search, String replacement) {
+    }
+
+    private record AppliedReplacementRule(int index, ReplacementRule rule, DeterministicPdfReplacer.Result result) {
     }
 
     private static List<ReplacementRule> buildRules(List<String> searchList, List<String> replacementList) {

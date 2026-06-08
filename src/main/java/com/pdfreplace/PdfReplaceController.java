@@ -61,6 +61,9 @@ public class PdfReplaceController {
                 .header("X-Bolt-Replacer-Matches-Found", String.valueOf(output.summary().matchesFound()))
                 .header("X-Bolt-Replacer-Style-Preserved", String.valueOf(output.summary().stylePreservedCount()))
                 .header("X-Bolt-Replacer-Style-Fallback", String.valueOf(output.summary().fallbackStyleCount()))
+                .header("X-Bolt-Replacer-Validation", output.validation().passed() ? "passed" : "failed")
+                .header("X-Bolt-Replacer-Rules-Validated", String.valueOf(output.validation().rulesValidated()))
+                .header("X-Bolt-Replacer-Validation-Warnings", String.valueOf(output.validation().warnings().size()))
                 .body(new ByteArrayResource(output.bytes()));
     }
 
