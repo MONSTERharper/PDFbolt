@@ -1,85 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { ExternalLink, X, Info, ShieldAlert, Sparkles, LayoutGrid, Terminal, Share2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Info, ShieldAlert } from 'lucide-react';
 import { AdSenseUnit } from './AdSenseUnit';
 import {
   shouldShowLiveAd,
   slotForResolvedConfig,
   useAdsenseConfig,
 } from '../useAdsenseConfig';
-
-interface AdPreset {
-  id: string;
-  sponsor: string;
-  title: string;
-  description: string;
-  cta: string;
-  link: string;
-  badge?: string;
-  bgColor: string;
-  textColor: string;
-  borderColor: string;
-  accentColor: string;
-  icon: React.ComponentType<{ size: number; className?: string }>;
-}
-
-const AD_PRESETS: AdPreset[] = [
-  {
-    id: 'pdf-bolt-sponsor',
-    sponsor: 'Sponsor PDFbolt',
-    title: 'Advertise on PDFbolt',
-    description:
-      'Reach people who use PDF tools every day for work and personal projects.',
-    cta: 'Inquire Ad Placement',
-    link: '#contact',
-    badge: 'SPONSOR SLOT AVAILABLE',
-    bgColor: 'bg-gradient-to-r from-red-50 to-orange-50/50',
-    textColor: 'text-red-950',
-    borderColor: 'border-red-100',
-    accentColor: '#FF3300',
-    icon: Terminal,
-  },
-  {
-    id: 'google-ai-studio',
-    sponsor: 'Google AI Studio',
-    title: 'Build with the Gemini API',
-    description: 'Integrate generative AI for summaries, parsing, and document workflows.',
-    cta: 'Get API Key',
-    link: 'https://ai.google.dev/',
-    badge: 'PARTNER',
-    bgColor: 'bg-gradient-to-r from-blue-50 to-indigo-50/50',
-    textColor: 'text-indigo-950',
-    borderColor: 'border-indigo-100',
-    accentColor: '#4F46E5',
-    icon: Sparkles,
-  },
-  {
-    id: 'cloud-run',
-    sponsor: 'Google Cloud Run',
-    title: 'Deploy containers that scale on demand',
-    description: 'HTTP-triggered autoscaling with managed TLS and secrets.',
-    cta: 'Deploy on Cloud Run',
-    link: 'https://cloud.google.com/run',
-    bgColor: 'bg-[#F8FAFC]',
-    textColor: 'text-slate-900',
-    borderColor: 'border-slate-200',
-    accentColor: '#0EA5E9',
-    icon: LayoutGrid,
-  },
-  {
-    id: 'tailwind-ui',
-    sponsor: 'Tailwind Labs',
-    title: 'Production-ready UI patterns',
-    description: 'Component kits built with Tailwind CSS utilities.',
-    cta: 'Explore Templates',
-    link: 'https://tailwindcss.com',
-    badge: 'RECOMMENDED',
-    bgColor: 'bg-gradient-to-r from-[#0F172A] to-[#1E293B]',
-    textColor: 'text-slate-100',
-    borderColor: 'border-slate-800',
-    accentColor: '#38BDF8',
-    icon: Share2,
-  },
-];
 
 function AdChrome({
   label,
@@ -138,77 +64,6 @@ function AdChrome({
   );
 }
 
-function PresetAdBody({
-  ad,
-  onInquire,
-  layout,
-}: {
-  ad: AdPreset;
-  onInquire?: () => void;
-  layout: 'banner' | 'sidebar';
-}) {
-  const Icon = ad.icon;
-
-  const handleCtaClick = (e: React.MouseEvent) => {
-    if (ad.link === '#contact') {
-      e.preventDefault();
-      onInquire?.();
-    } else {
-      window.open(ad.link, '_blank', 'noopener,noreferrer');
-    }
-  };
-
-  if (layout === 'sidebar') {
-    return (
-      <div
-        className={`border ${ad.borderColor} ${ad.bgColor} ${ad.textColor} p-4 rounded-xl flex flex-col justify-between min-h-[200px]`}
-      >
-        <div className="space-y-2.5">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-md bg-white/60 border border-black/[0.04]">
-              <Icon size={12} style={{ color: ad.accentColor }} />
-            </div>
-            <span className="font-bold text-xs tracking-tight uppercase">{ad.sponsor}</span>
-          </div>
-          <h4 className="font-black text-xs leading-snug">{ad.title}</h4>
-          <p className="text-xs opacity-75 font-sans leading-relaxed line-clamp-3">{ad.description}</p>
-        </div>
-        <button
-          type="button"
-          onClick={handleCtaClick}
-          className="w-full mt-3 py-2 text-xs font-mono font-bold uppercase tracking-widest rounded-md border-2 border-current"
-        >
-          {ad.cta}
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className={`border ${ad.borderColor} ${ad.bgColor} ${ad.textColor} p-4 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4`}
-    >
-      <div className="flex items-start gap-3 min-w-0 flex-1">
-        <div className="shrink-0 p-2 rounded-lg bg-white/60 border border-black/[0.04]">
-          <Icon size={16} style={{ color: ad.accentColor }} />
-        </div>
-        <div className="space-y-0.5 min-w-0">
-          <h4 className="font-bold text-xs md:text-sm tracking-tight leading-snug">{ad.title}</h4>
-          <p className="text-sm opacity-85 font-sans line-clamp-2">{ad.description}</p>
-        </div>
-      </div>
-      <button
-        type="button"
-        onClick={handleCtaClick}
-        className="px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider rounded-lg border-2 border-current flex items-center gap-1.5"
-      >
-        {ad.cta}
-        <ExternalLink size={12} />
-      </button>
-    </div>
-  );
-}
-
 function AdInfoPanel({ onReport, onClose }: { onReport: () => void; onClose: () => void }) {
   return (
     <div className="py-2 text-xs font-sans space-y-3" role="dialog" aria-labelledby="why-ads-title">
@@ -239,28 +94,25 @@ function AdInfoPanel({ onReport, onClose }: { onReport: () => void; onClose: () 
   );
 }
 
-export function BannerAd({ className = '', onInquire }: { className?: string; onInquire?: () => void }) {
+/**
+ * Banner ad slot. Renders a real Google AdSense unit when one is available and
+ * fills; otherwise it renders nothing (no house or placeholder ads).
+ */
+export function BannerAd({ className = '' }: { className?: string; onInquire?: () => void }) {
   const adsConfig = useAdsenseConfig();
   const [showInfo, setShowInfo] = useState(false);
-  const [presetIdx, setPresetIdx] = useState(0);
   const [liveUnfilled, setLiveUnfilled] = useState(false);
   const bannerSlot = slotForResolvedConfig(adsConfig, 'banner');
   const tryLiveAd = shouldShowLiveAd(adsConfig, 'banner') && !liveUnfilled;
 
-  useEffect(() => {
-    if (tryLiveAd || showInfo) return;
-    const interval = setInterval(() => {
-      setPresetIdx((prev) => (prev + 1) % AD_PRESETS.length);
-    }, 12000);
-    return () => clearInterval(interval);
-  }, [tryLiveAd, showInfo]);
-
-  const ad = AD_PRESETS[presetIdx];
+  if (!tryLiveAd) {
+    return null;
+  }
 
   return (
     <AdChrome
       className={className}
-      label={tryLiveAd ? 'Google AdSense' : ad.sponsor}
+      label="Google AdSense"
       dismissible={false}
       onDismiss={() => {}}
       showInfo={showInfo}
@@ -268,7 +120,7 @@ export function BannerAd({ className = '', onInquire }: { className?: string; on
     >
       {showInfo ? (
         <AdInfoPanel onReport={() => setShowInfo(false)} onClose={() => setShowInfo(false)} />
-      ) : tryLiveAd ? (
+      ) : (
         <AdSenseUnit
           slot={bannerSlot}
           client={adsConfig.client}
@@ -276,39 +128,31 @@ export function BannerAd({ className = '', onInquire }: { className?: string; on
           minHeight={90}
           onUnfilled={() => setLiveUnfilled(true)}
         />
-      ) : (
-        <PresetAdBody ad={ad} onInquire={onInquire} layout="banner" />
       )}
     </AdChrome>
   );
 }
 
-export function SidebarAd({ className = '', onInquire }: { className?: string; onInquire?: () => void }) {
+/**
+ * Sidebar ad slot. Real Google AdSense only; renders nothing when no ad serves.
+ */
+export function SidebarAd({ className = '' }: { className?: string; onInquire?: () => void }) {
   const adsConfig = useAdsenseConfig();
   const [isDismissed, setIsDismissed] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [reported, setReported] = useState(false);
-  const [presetIdx, setPresetIdx] = useState(0);
-  const slot = slotForResolvedConfig(adsConfig, 'sidebar');
   const [liveUnfilled, setLiveUnfilled] = useState(false);
+  const slot = slotForResolvedConfig(adsConfig, 'sidebar');
   const tryLiveAd = shouldShowLiveAd(adsConfig, 'sidebar') && !liveUnfilled;
 
-  useEffect(() => {
-    if (tryLiveAd || reported || showInfo) return;
-    const interval = setInterval(() => {
-      setPresetIdx((prev) => (prev + 1) % AD_PRESETS.length);
-    }, 15000);
-    return () => clearInterval(interval);
-  }, [tryLiveAd, reported, showInfo]);
-
-  if (isDismissed) return null;
-
-  const ad = AD_PRESETS[presetIdx];
+  if (isDismissed || !tryLiveAd) {
+    return null;
+  }
 
   return (
     <AdChrome
       className={`max-w-sm ${className}`}
-      label={tryLiveAd ? 'Google AdSense' : ad.sponsor}
+      label="Google AdSense"
       onDismiss={() => setIsDismissed(true)}
       showInfo={showInfo}
       onToggleInfo={() => setShowInfo((v) => !v)}
@@ -320,7 +164,7 @@ export function SidebarAd({ className = '', onInquire }: { className?: string; o
         </div>
       ) : showInfo ? (
         <AdInfoPanel onReport={() => setReported(true)} onClose={() => setShowInfo(false)} />
-      ) : tryLiveAd ? (
+      ) : (
         <AdSenseUnit
           slot={slot}
           client={adsConfig.client}
@@ -328,8 +172,6 @@ export function SidebarAd({ className = '', onInquire }: { className?: string; o
           minHeight={250}
           onUnfilled={() => setLiveUnfilled(true)}
         />
-      ) : (
-        <PresetAdBody ad={ad} onInquire={onInquire} layout="sidebar" />
       )}
     </AdChrome>
   );

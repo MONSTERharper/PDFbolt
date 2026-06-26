@@ -187,6 +187,30 @@ export function useToolWorkflow({ currentView, selectedWipTool, goToView }: UseT
     setReplaceStatus({ msg, type: 'error' });
   }, []);
 
+  const onReplaceFilesChange = useCallback(
+    (pdfs: File[]) => {
+      setFile(null);
+      setExtraFiles(pdfs);
+      setProcessedBytes(null);
+      setReplaceStatus(null);
+      if (pdfs.length > 0) {
+        setFileUploadFeedback({
+          msg: `${pdfs.length} PDF${pdfs.length === 1 ? '' : 's'} ready for bolt replace.`,
+          type: 'ok',
+        });
+        addLog(`Loaded ${pdfs.length} PDF(s) for replace`, 'info');
+      } else {
+        setFileUploadFeedback(null);
+      }
+    },
+    [addLog],
+  );
+
+  const replaceFiles = useMemo(
+    () => (extraFiles.length > 0 ? extraFiles : file ? [file] : []),
+    [extraFiles, file],
+  );
+
   const activePdfToolId =
     currentView === 'wip' && selectedWipTool
       ? selectedWipTool.id
@@ -290,7 +314,7 @@ export function useToolWorkflow({ currentView, selectedWipTool, goToView }: UseT
           const orig = Number(compressResult.originalBytes);
           const out = Number(compressResult.outputBytes);
           const pct = compressResult.savedPercent;
-          const compressMsg = `Compressed: ${formatBytesHint(String(orig))} → ${formatBytesHint(String(out))} (${pct}% smaller, ${compressResult.pages} page(s)).`;
+          const compressMsg = `Compressed: ${formatBytesHint(String(orig))} → ${formatBytesHint(String(out))} (${pct}% smaller, ${compressResult.pages} page(s)). Your file has been deleted from our server.`;
           onToolRunSuccess('compress');
           setToolRunStatus({ msg: compressMsg, type: 'ok' });
           addLog(compressMsg, 'success');
@@ -357,7 +381,7 @@ export function useToolWorkflow({ currentView, selectedWipTool, goToView }: UseT
 
         setProcessedBytes(new Uint8Array(await result.blob.arrayBuffer()));
         triggerDownload(result.blob, result.filename);
-        let successMsg = `Downloaded ${result.filename}`;
+        let successMsg = `Downloaded ${result.filename} — your file has been deleted from our server.`;
         if (result.pdfaValidationNote) {
           successMsg += ` ${result.pdfaValidationNote}`;
         }
@@ -465,8 +489,8 @@ export function useToolWorkflow({ currentView, selectedWipTool, goToView }: UseT
   ]);
 
   const handleRunReplacement = useCallback(async () => {
-    if (!file) {
-      setReplaceStatus({ msg: 'Choose a PDF file first.', type: 'error' });
+    if (replaceFiles.length === 0) {
+      setReplaceStatus({ msg: 'Choose at least one PDF file.', type: 'error' });
       return;
     }
     const activePairs = pairs.filter((p) => p.find.trim());
@@ -481,11 +505,15 @@ export function useToolWorkflow({ currentView, selectedWipTool, goToView }: UseT
       setReplaceStatus({ msg: 'Enter the correct PDF password first.', type: 'error' });
       return;
     }
+    const batch = replaceFiles.length > 1;
     setIsProcessing(true);
-    setReplaceStatus({ msg: 'Processing your file…', type: 'info' });
-    addLog('Sending PDF to PDFbolt server...');
+    setReplaceStatus({
+      msg: batch ? `Processing ${replaceFiles.length} PDFs…` : 'Processing your file…',
+      type: 'info',
+    });
+    addLog(batch ? `Sending ${replaceFiles.length} PDFs to PDFbolt server...` : 'Sending PDF to PDFbolt server...');
     try {
-      const result = await serverReplacePdf(file, activePairs, {
+      const result = await serverReplacePdf(replaceFiles, activePairs, {
         matchMode,
         replaceScope,
         occurrenceIndex,
@@ -499,11 +527,15 @@ export function useToolWorkflow({ currentView, selectedWipTool, goToView }: UseT
       if (matches > 0) {
         triggerDownload(result.blob, result.filename);
         onToolRunSuccess('replace');
-        const msg = `Done. ${matches} replacement(s) from ${found} match(es). Style preserved: ${result.stylePreserved}, fallback: ${result.styleFallback}.`;
+        const msg = batch
+          ? `Done. ${replaceFiles.length} PDFs processed — ${matches} replacement(s) from ${found} match(es). Downloaded ${result.filename}.`
+          : `Done. ${matches} replacement(s) from ${found} match(es). Style preserved: ${result.stylePreserved}, fallback: ${result.styleFallback}.`;
         setReplaceStatus({ msg, type: 'ok' });
         addLog(msg, 'success');
       } else {
-        const msg = 'No matching text was found in the PDF. Try case-insensitive match or check spelling.';
+        const msg = batch
+          ? 'No matching text was found in any of the PDFs. Try case-insensitive match or check spelling.'
+          : 'No matching text was found in the PDF. Try case-insensitive match or check spelling.';
         setReplaceStatus({ msg, type: 'error' });
         addLog(msg, 'info');
       }
@@ -516,13 +548,13 @@ export function useToolWorkflow({ currentView, selectedWipTool, goToView }: UseT
     }
   }, [
     addLog,
-    file,
     matchMode,
     occurrenceIndex,
     pairs,
     pdfGate.passwordBlocked,
     pdfGate.pdfPasswordsJson,
     preserveStyle,
+    replaceFiles,
     replaceScope,
     retainMetadata,
   ]);
@@ -647,12 +679,12 @@ export function useToolWorkflow({ currentView, selectedWipTool, goToView }: UseT
   };
 
   const replacePageProps = {
-    file,
+    replaceFiles,
     pairs,
     setPairs,
     pdfGate,
     encryptedPdfEntries,
-    onPrimaryPdfSelected,
+    onReplaceFilesChange,
     onPrimaryPdfInvalid,
     fileUploadFeedback,
     matchMode,

@@ -15,7 +15,7 @@ import java.util.Map;
 @RequestMapping("/api/public")
 public class SitePublicController {
 
-    @Value("${boltreplacer.site.support-email:support@mypdfbolt.shop}")
+    @Value("${boltreplacer.site.support-email:}")
     private String supportEmail;
 
     @Value("${boltreplacer.limits.max-pages:250}")

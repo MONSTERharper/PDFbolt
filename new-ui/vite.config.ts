@@ -70,6 +70,23 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: '../src/main/resources/static/app',
       emptyOutDir: true,
+      chunkSizeWarningLimit: 900,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return undefined;
+            if (id.includes('pdfjs-dist')) return 'pdfjs';
+            if (id.includes('pdf-lib')) return 'pdflib';
+            if (id.includes('jszip')) return 'jszip';
+            if (id.includes('lucide-react')) return 'icons';
+            if (id.includes('/motion/') || id.includes('framer-motion')) return 'motion';
+            if (id.includes('react-dom') || id.includes('/react/') || id.includes('scheduler')) {
+              return 'react-vendor';
+            }
+            return 'vendor';
+          },
+        },
+      },
     },
     server: {
       hmr: process.env.DISABLE_HMR !== 'true',

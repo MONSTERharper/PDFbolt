@@ -16,14 +16,32 @@
     <meta name="theme-color" content="#FF3300" />
     <title>PDFbolt — Online PDF tools</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23FF3300'><path d='M13 10V3L4 14h7v7l9-11h-7z'/></svg>" />
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-0HTQ4L661H"></script>
+    <!-- Google Consent Mode v2 defaults. EEA/UK/CH start denied until a consent
+         signal arrives (from Google's certified consent message, enabled in the
+         AdSense console); AdSense then serves non-personalized ads in the meantime.
+         Everywhere else uses Google's defaults. Must run before gtag/AdSense load. -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
+      gtag('consent', 'default', {
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+        analytics_storage: 'denied',
+        wait_for_update: 500,
+        region: ['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE','IS','LI','NO','GB','CH']
+      });
+      gtag('set', 'ads_data_redaction', true);
+      gtag('set', 'url_passthrough', true);
+    </script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-0HTQ4L661H"></script>
+    <script>
       gtag('js', new Date());
       gtag('config', 'G-0HTQ4L661H');
     </script>
-    <!-- AdSense script is injected from the app only when VITE_ADSENSE_ENABLED=true -->
+    <!-- Google AdSense site verification + loader (present on every page for review and Auto ads). -->
+    <meta name="google-adsense-account" content="ca-pub-3054286166063522" />
+    <script async id="pdfbolt-adsense-loader" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3054286166063522" crossorigin="anonymous"></script>
   </head>
   <body>
     <div id="root"></div>

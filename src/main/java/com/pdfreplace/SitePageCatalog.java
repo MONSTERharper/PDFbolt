@@ -25,6 +25,14 @@ final class SitePageCatalog {
         if (direct != null) {
             return direct;
         }
+        if (path.startsWith("/guides/")) {
+            String slug = path.substring("/guides/".length());
+            GuideCatalog.Guide guide = GuideCatalog.bySlug(slug);
+            if (guide != null) {
+                return new SitePageMeta(guide.title() + " — PDFbolt", guide.title(), guide.description());
+            }
+            return notFound();
+        }
         if (path.startsWith("/bolt/")) {
             String slug = path.substring("/bolt/".length());
             return resolveBoltSlug(slug);
@@ -74,6 +82,11 @@ final class SitePageCatalog {
                 "All tools — PDFbolt",
                 "All PDF tools",
                 "Browse every PDFbolt tool — merge, split, compress, convert, sign, redact, and more."));
+        pages.put("/guides", SitePageMeta.staticPage(
+                "PDF Guides — PDFbolt",
+                "PDF Guides",
+                "Practical, plain-English guides on compressing, converting, merging, securing, and archiving PDF "
+                        + "documents."));
         pages.put("/about", SitePageMeta.staticPage(
                 "About — PDFbolt",
                 "About PDFbolt",
@@ -153,5 +166,21 @@ final class SitePageCatalog {
     static Optional<String> publicToolIdForSlug(String slug) {
         String toolId = SLUG_TO_TOOL_ID.getOrDefault(slug, slug);
         return BY_TOOL_ID.containsKey(toolId) ? Optional.of(toolId) : Optional.empty();
+    }
+
+    /** Canonical tool id for a request path (e.g. {@code /bolt/jpg-to-pdf} → {@code images-to-pdf}), if any. */
+    static Optional<String> toolIdForPath(String rawPath) {
+        String path = normalizePath(rawPath);
+        String slug;
+        if (path.startsWith("/bolt/")) {
+            slug = path.substring("/bolt/".length());
+        } else if (path.startsWith("/tools/")) {
+            slug = path.substring("/tools/".length());
+        } else if ("/replace".equals(path) || "/compress".equals(path)) {
+            slug = path.substring(1);
+        } else {
+            return Optional.empty();
+        }
+        return publicToolIdForSlug(slug);
     }
 }

@@ -17,7 +17,11 @@ import { AboutPage } from './pages/AboutPage';
 import { ContactPage } from './pages/ContactPage';
 import { ReplacePage } from './pages/ReplacePage';
 import { ToolPage } from './pages/ToolPage';
+import { GuidesPage } from './pages/GuidesPage';
+import { GuideArticlePage } from './pages/GuideArticlePage';
 import { applyPageMeta, defaultPageDescription } from './pageMeta';
+import { toolMetaDescription } from './toolContent';
+import { getGuide, type Guide } from './guidesContent';
 import { BOLT_TOOL_IDS } from './toolsCatalog';
 import { useSiteConfig } from './useSiteConfig';
 import { useAppVersion } from './useAppVersion';
@@ -44,6 +48,7 @@ export default function App() {
   const { displayVersion, versionMismatch, buildVersion, serverVersion } = useAppVersion();
   const [currentView, setCurrentView] = useState<AppView>('dashboard');
   const [selectedWipTool, setSelectedWipTool] = useState<SuiteTool | null>(null);
+  const [activeGuide, setActiveGuide] = useState<Guide | null>(null);
   const [popularToolIds, setPopularToolIds] = useState<string[]>([...DEFAULT_POPULAR_TOOL_IDS]);
   const [recentToolIds, setRecentToolIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -64,8 +69,9 @@ export default function App() {
         setCurrentView('wip');
         applyPageMeta({
           title: pageTitle('wip', tool.cleanName),
-          description: tool.description,
+          description: toolMetaDescription(tool.id, tool.description),
           path: pathname,
+          ogImagePath: `/og/${tool.id}.png`,
         });
         return;
       }
@@ -77,9 +83,29 @@ export default function App() {
       setCurrentView('replace');
       applyPageMeta({
         title: pageTitle('replace'),
-        description: 'Find and replace text in your PDF, then download the updated file.',
+        description: toolMetaDescription('replace', 'Find and replace text in your PDF, then download the updated file.'),
         path: pathname,
+        ogImagePath: '/og/replace.png',
       });
+      return;
+    }
+    if (route.view === 'guide') {
+      const guide = route.slug ? getGuide(route.slug) : null;
+      if (guide) {
+        setActiveGuide(guide);
+        setSelectedWipTool(null);
+        setCurrentView('guide');
+        applyPageMeta({
+          title: guide.metaTitle,
+          description: guide.description,
+          path: pathname,
+        });
+        return;
+      }
+      setActiveGuide(null);
+      setSelectedWipTool(null);
+      setCurrentView('not-found');
+      applyPageMeta({ title: pageTitle('not-found'), path: pathname });
       return;
     }
     setSelectedWipTool(null);
@@ -112,15 +138,36 @@ export default function App() {
     window.history.pushState({}, '', path);
     const description =
       view === 'wip' && tool
-        ? tool.description
+        ? toolMetaDescription(tool.id, tool.description)
         : view === 'replace'
-          ? 'Find and replace text in your PDF, then download the updated file.'
+          ? toolMetaDescription('replace', 'Find and replace text in your PDF, then download the updated file.')
           : defaultPageDescription();
+    const ogImagePath =
+      view === 'wip' && tool
+        ? `/og/${tool.id}.png`
+        : view === 'replace'
+          ? '/og/replace.png'
+          : undefined;
     applyPageMeta({
       title: pageTitle(view, tool?.cleanName),
       description,
       path,
+      ogImagePath,
     });
+  }, []);
+
+  const openGuide = useCallback((slug: string) => {
+    const guide = getGuide(slug);
+    if (!guide) {
+      return;
+    }
+    const path = `/guides/${slug}`;
+    setActiveGuide(guide);
+    setSelectedWipTool(null);
+    setCurrentView('guide');
+    window.history.pushState({}, '', path);
+    applyPageMeta({ title: guide.metaTitle, description: guide.description, path });
+    window.scrollTo({ top: 0, behavior: 'auto' });
   }, []);
 
   const { handleToolClick, toolPageBindings, replacePageProps } = useToolWorkflow({
@@ -217,6 +264,8 @@ export default function App() {
         handleToolClick(tool);
       }
     },
+    onOpenGuide: openGuide,
+    onBrowseGuides: () => goToView('guides', '/guides'),
   };
 
   return (
@@ -329,6 +378,7 @@ export default function App() {
                 onFaq={() => goToView('faq', '/faq')}
                 onPrivacy={() => goToView('privacy', '/privacy')}
                 onTerms={() => goToView('terms', '/terms')}
+                onContact={() => goToView('contact', '/contact')}
               />
             </motion.div>
           )}
@@ -375,6 +425,33 @@ export default function App() {
           {currentView === 'status' && (
             <motion.div key="status" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <StatusPage onBack={() => goToView('dashboard', '/')} />
+            </motion.div>
+          )}
+
+          {currentView === 'guides' && (
+            <motion.div key="guides" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <GuidesPage
+                onBack={() => goToView('dashboard', '/')}
+                onContact={() => goToView('contact', '/contact')}
+                onOpenGuide={openGuide}
+              />
+            </motion.div>
+          )}
+
+          {currentView === 'guide' && activeGuide && (
+            <motion.div key="guide" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <GuideArticlePage
+                guide={activeGuide}
+                onBackToGuides={() => goToView('guides', '/guides')}
+                onContact={() => goToView('contact', '/contact')}
+                onOpenTool={(toolId) => {
+                  const tool = resolveSuiteTool(toolId);
+                  if (tool) {
+                    handleToolClick(tool);
+                  }
+                }}
+                onOpenGuide={openGuide}
+              />
             </motion.div>
           )}
 

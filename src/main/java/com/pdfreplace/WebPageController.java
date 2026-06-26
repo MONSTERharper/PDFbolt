@@ -23,12 +23,19 @@ public class WebPageController {
             "/faq",
             "/status",
             "/directory",
+            "/guides",
             "/replace",
             "/compress"
     })
     @ResponseBody
     public org.springframework.http.ResponseEntity<String> spaEntry(HttpServletRequest request) {
         return spaHtmlRenderer.renderPage(request.getRequestURI());
+    }
+
+    @GetMapping("/guides/{slug}")
+    @ResponseBody
+    public org.springframework.http.ResponseEntity<String> guideArticle(@PathVariable("slug") String slug) {
+        return spaHtmlRenderer.renderPage("/guides/" + slug);
     }
 
     @GetMapping("/bolt/{slug}")

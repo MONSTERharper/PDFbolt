@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -27,6 +28,9 @@ public class SpaHtmlRenderer {
             Pattern.CASE_INSENSITIVE);
     private static final Pattern OG_URL = Pattern.compile(
             "<meta property=\"og:url\" content=\"[^\"]*\"\\s*/?>",
+            Pattern.CASE_INSENSITIVE);
+    private static final Pattern OG_IMAGE = Pattern.compile(
+            "<meta property=\"og:image\" content=\"[^\"]*\"\\s*/?>",
             Pattern.CASE_INSENSITIVE);
     private static final Pattern TWITTER_TITLE = Pattern.compile(
             "<meta name=\"twitter:title\" content=\"[^\"]*\"\\s*/?>",
@@ -75,6 +79,15 @@ public class SpaHtmlRenderer {
                     "</head>",
                     "    <meta property=\"og:url\" content=\"" + escapeHtml(canonicalUrl) + "\" />\n  </head>");
         }
+        String ogImageUrl = SitePageCatalog.toolIdForPath(path)
+                .map(toolId -> baseUrl + "/og/" + toolId + ".png")
+                .orElse(baseUrl + "/og-image.png");
+        html = OG_IMAGE.matcher(html).replaceFirst(
+                "<meta property=\"og:image\" content=\"" + escapeHtml(ogImageUrl) + "\" />");
+        html = html.replaceFirst(
+                "</head>",
+                "    <meta property=\"og:image:alt\" content=\"" + title + "\" />\n"
+                        + "    <meta name=\"twitter:image\" content=\"" + escapeHtml(ogImageUrl) + "\" />\n  </head>");
         if (TWITTER_TITLE.matcher(html).find()) {
             html = TWITTER_TITLE.matcher(html).replaceFirst(
                     "<meta name=\"twitter:title\" content=\"" + title + "\" />");
@@ -93,6 +106,8 @@ public class SpaHtmlRenderer {
         }
         html = injectCanonical(html, canonicalUrl);
         html = injectJsonLd(html, meta, canonicalUrl, baseUrl);
+        html = injectSiteIdentityJsonLd(html, path);
+        html = injectFaqJsonLd(html, SitePageContent.resolve(path));
         html = ROOT_DIV.matcher(html).replaceFirst("<div id=\"root\">" + prerenderBody(meta, path) + "</div>");
         return html;
     }
@@ -128,6 +143,46 @@ public class SpaHtmlRenderer {
         return html.replaceFirst("</head>", "    " + jsonLd + "\n  </head>");
     }
 
+    /** Organization + WebSite + SoftwareApplication identity, emitted once on the home page. */
+    private String injectSiteIdentityJsonLd(String html, String path) {
+        if (!"/".equals(normalizePath(path))) {
+            return html;
+        }
+        String jsonLd = ("<script type=\"application/ld+json\">"
+                + "{\"@context\":\"https://schema.org\",\"@graph\":["
+                + "{\"@type\":\"Organization\",\"name\":\"PDFbolt\",\"url\":\"%1$s\",\"logo\":\"%1$s/og-image.png\"},"
+                + "{\"@type\":\"WebSite\",\"name\":\"PDFbolt\",\"url\":\"%1$s\","
+                + "\"description\":\"Free online PDF tools to merge, split, compress, convert, edit, sign, and secure PDF files.\"},"
+                + "{\"@type\":\"SoftwareApplication\",\"name\":\"PDFbolt\",\"applicationCategory\":\"BusinessApplication\","
+                + "\"operatingSystem\":\"Web\",\"url\":\"%1$s\","
+                + "\"offers\":{\"@type\":\"Offer\",\"price\":\"0\",\"priceCurrency\":\"USD\"}}"
+                + "]}</script>").formatted(baseUrl);
+        return html.replaceFirst("</head>", "    " + jsonLd + "\n  </head>");
+    }
+
+    private String injectFaqJsonLd(String html, SitePageContent.Content content) {
+        if (content == null || content.faqs().isEmpty()) {
+            return html;
+        }
+        StringBuilder entities = new StringBuilder();
+        List<SitePageContent.Faq> faqs = content.faqs();
+        for (int i = 0; i < faqs.size(); i++) {
+            SitePageContent.Faq faq = faqs.get(i);
+            if (i > 0) {
+                entities.append(",");
+            }
+            entities.append("{\"@type\":\"Question\",\"name\":")
+                    .append(jsonString(faq.question()))
+                    .append(",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":")
+                    .append(jsonString(faq.answer()))
+                    .append("}}");
+        }
+        String jsonLd = "<script type=\"application/ld+json\">"
+                + "{\"@context\":\"https://schema.org\",\"@type\":\"FAQPage\",\"mainEntity\":["
+                + entities + "]}</script>";
+        return html.replaceFirst("</head>", "    " + jsonLd + "\n  </head>");
+    }
+
     private static String jsonString(String value) {
         return "\"" + value
                 .replace("\\", "\\\\")
@@ -139,18 +194,44 @@ public class SpaHtmlRenderer {
     private static String prerenderBody(SitePageMeta meta, String path) {
         String heading = escapeHtml(meta.heading());
         String description = escapeHtml(meta.description());
+        SitePageContent.Content content = SitePageContent.resolve(path);
         StringBuilder body = new StringBuilder();
         body.append("<main id=\"seo-prerender\">");
         body.append("<header><p><a href=\"/\">PDFbolt</a> — Free online PDF tools</p></header>");
         body.append("<h1>").append(heading).append("</h1>");
         body.append("<p>").append(description).append("</p>");
+
+        if (content != null) {
+            for (String paragraph : content.paragraphs()) {
+                body.append("<p>").append(escapeHtml(paragraph)).append("</p>");
+            }
+            if (content.howToHeading() != null && !content.steps().isEmpty()) {
+                body.append("<h2>").append(escapeHtml(content.howToHeading())).append("</h2>");
+                body.append("<ol>");
+                for (String step : content.steps()) {
+                    body.append("<li>").append(escapeHtml(step)).append("</li>");
+                }
+                body.append("</ol>");
+            }
+            if (!content.faqs().isEmpty()) {
+                body.append("<h2>Frequently asked questions</h2>");
+                for (SitePageContent.Faq faq : content.faqs()) {
+                    body.append("<h3>").append(escapeHtml(faq.question())).append("</h3>");
+                    body.append("<p>").append(escapeHtml(faq.answer())).append("</p>");
+                }
+            }
+        }
+
         if (!"/".equals(path) && !path.startsWith("/bolt/")) {
-            body.append("<p><a href=\"/directory\">Browse all PDF tools</a></p>");
+            body.append("<p><a href=\"/tools\">All PDF tools (HTML index)</a> · ");
+            body.append("<a href=\"/directory\">Browse all PDF tools</a></p>");
         } else if (path.startsWith("/bolt/")) {
-            body.append("<p><a href=\"/directory\">Browse all PDF tools</a> · ");
+            body.append("<p><a href=\"/tools\">All PDF tools (HTML index)</a> · ");
+            body.append("<a href=\"/directory\">Browse all PDF tools</a> · ");
             body.append("<a href=\"/\">PDFbolt home</a></p>");
         } else {
-            body.append("<p><a href=\"/directory\">Browse all PDF tools</a></p>");
+            body.append("<p><a href=\"/tools\">All PDF tools (HTML index)</a> · ");
+            body.append("<a href=\"/directory\">Browse all PDF tools</a></p>");
         }
         body.append("<noscript><p>Enable JavaScript to upload files and run this tool in your browser.</p></noscript>");
         body.append("</main>");

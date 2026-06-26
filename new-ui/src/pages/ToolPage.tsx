@@ -7,6 +7,8 @@ import { SignPdfEditor } from '../components/SignPdfEditor';
 import { ComparePdfViewer } from '../components/ComparePdfViewer';
 import { EncryptedPdfBanner } from '../components/EncryptedPdfBanner';
 import { BoltBrand } from '../components/BoltBrand';
+import { ToolGuide } from '../components/ToolGuide';
+import { getToolContent } from '../toolContent';
 import { boltExecuteLabel, boltToolName } from '../toolLabels';
 import { toolInputReady } from '../toolUploadConfig';
 import {
@@ -126,6 +128,7 @@ export function ToolPage({ tool, bindings }: { tool: SuiteTool; bindings: ToolPa
   const ToolIcon = tool.icon;
   const toolId = tool.id;
   const isLive = isToolLive(toolId);
+  const guideContent = getToolContent(toolId);
 
   const isNoInput =
     toolId === 'redact-pdf'
@@ -878,6 +881,8 @@ export function ToolPage({ tool, bindings }: { tool: SuiteTool; bindings: ToolPa
             </div>
           </div>
         </section>
+
+        {guideContent && <ToolGuide cleanName={tool.cleanName} content={guideContent} />}
       </div>
   );
 }

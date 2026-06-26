@@ -2,11 +2,13 @@ import React from 'react';
 import { Replace, Trash2, Plus, CheckCircle2, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { BannerAd } from '../components/AdPlacement';
-import { PdfFilePicker } from '../components/PdfFilePicker';
+import { PdfMultiFilePicker } from '../components/PdfMultiFilePicker';
 import { EncryptedPdfBanner } from '../components/EncryptedPdfBanner';
 import { BoltBrand } from '../components/BoltBrand';
 import { UploadLimitsNote } from '../components/UploadLimitsNote';
-import { boltToolName, boltUploadHeading } from '../toolLabels';
+import { ToolGuide } from '../components/ToolGuide';
+import { getToolContent } from '../toolContent';
+import { boltUploadHeading } from '../toolLabels';
 import { boundedIntFromInput } from '../parseNumber';
 import type { ReplacePairWithStrict as ReplacePair } from '../backendBridge';
 import type { usePdfEncryptionGate } from '../usePdfEncryptionGate';
@@ -15,12 +17,12 @@ import type { SiteLimits } from '../useSiteConfig';
 export function ReplacePage({
   onBack,
   onContact,
-  file,
+  replaceFiles,
   pairs,
   setPairs,
   pdfGate,
   encryptedPdfEntries,
-  onPrimaryPdfSelected,
+  onReplaceFilesChange,
   onPrimaryPdfInvalid,
   fileUploadFeedback,
   matchMode,
@@ -40,7 +42,7 @@ export function ReplacePage({
 }: {
   onBack: () => void;
   onContact: () => void;
-  file: File | null;
+  replaceFiles: File[];
   pairs: ReplacePair[];
   setPairs: (pairs: ReplacePair[]) => void;
   pdfGate: ReturnType<typeof usePdfEncryptionGate>;
@@ -49,7 +51,7 @@ export function ReplacePage({
     password: string;
     onPasswordChange: (value: string) => void;
   }[];
-  onPrimaryPdfSelected: (file: File) => void;
+  onReplaceFilesChange: (files: File[]) => void;
   onPrimaryPdfInvalid: (msg: string) => void;
   fileUploadFeedback: { msg: string; type: 'ok' | 'error' } | null;
   matchMode: string;
@@ -67,6 +69,7 @@ export function ReplacePage({
   onRunReplacement: () => void;
   siteLimits: SiteLimits;
 }) {
+  const replaceGuide = getToolContent('replace');
   return (
     <div className="max-w-6xl mx-auto p-8 space-y-10">
       <button
@@ -90,7 +93,7 @@ export function ReplacePage({
               <BoltBrand text="bolt replace" showInfo />
             </h2>
             <p className="text-sm text-gray-500 font-sans">
-              Find and replace text in your PDF, then download the updated file.
+              Find and replace text in one or more PDFs, then download the updated file(s).
             </p>
           </div>
         </div>
@@ -121,12 +124,15 @@ export function ReplacePage({
             <span id="pdf-file-label" className="text-xs font-mono uppercase tracking-widest text-gray-600 font-bold block">
               {boltUploadHeading('replace')}
             </span>
-            <PdfFilePicker
-              file={file}
-              onFileSelected={onPrimaryPdfSelected}
+            <PdfMultiFilePicker
+              files={replaceFiles}
+              onChange={onReplaceFilesChange}
               onInvalidFile={onPrimaryPdfInvalid}
               labelId="pdf-file-label"
-              chooseLabel={`Choose PDF for ${boltToolName('replace')}`}
+              chooseLabel="Choose PDF files"
+              minFiles={1}
+              listCaption="PDFs to process (same rules applied to each)"
+              boltToolLabel="bolt replace"
             />
             <UploadLimitsNote limits={siteLimits} toolId="replace" />
             {fileUploadFeedback && (
@@ -327,15 +333,17 @@ export function ReplacePage({
           )}
 
           <button
-            disabled={!file || isProcessing || pdfGate.passwordBlocked || !pairs.some((p) => p.find.trim())}
+            disabled={replaceFiles.length === 0 || isProcessing || pdfGate.passwordBlocked || !pairs.some((p) => p.find.trim())}
             onClick={onRunReplacement}
-            aria-label={isProcessing ? 'Processing PDF. Please wait.' : 'Replace text and download PDF'}
-            className={`w-full py-8 font-black text-2xl uppercase tracking-tighter transition-all shadow-[8px_8px_0px_#141414] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none border-2 border-[#141414] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3300] focus-visible:ring-offset-2 ${!file || isProcessing || pdfGate.passwordBlocked || !pairs.some((p) => p.find.trim()) ? 'bg-[#DCDAD5] text-neutral-600 cursor-not-allowed border-2 border-[#141414]/40 shadow-none translate-none' : 'bg-[#FF3300] text-white hover:bg-[#141414] hover:shadow-[8px_8px_0px_#FF3300]'}`}
+            aria-label={isProcessing ? 'Processing PDF. Please wait.' : replaceFiles.length > 1 ? 'Replace text in all PDFs and download zip' : 'Replace text and download PDF'}
+            className={`w-full py-8 font-black text-2xl uppercase tracking-tighter transition-all shadow-[8px_8px_0px_#141414] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none border-2 border-[#141414] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3300] focus-visible:ring-offset-2 ${replaceFiles.length === 0 || isProcessing || pdfGate.passwordBlocked || !pairs.some((p) => p.find.trim()) ? 'bg-[#DCDAD5] text-neutral-600 cursor-not-allowed border-2 border-[#141414]/40 shadow-none translate-none' : 'bg-[#FF3300] text-white hover:bg-[#141414] hover:shadow-[8px_8px_0px_#FF3300]'}`}
           >
-            {isProcessing ? 'Processing…' : 'Replace and Download'}
+            {isProcessing ? 'Processing…' : replaceFiles.length > 1 ? 'Replace all and Download zip' : 'Replace and Download'}
           </button>
         </div>
       </div>
+
+      {replaceGuide && <ToolGuide cleanName="Replace Text" content={replaceGuide} />}
     </div>
   );
 }

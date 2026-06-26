@@ -7,7 +7,7 @@ interface SiteFooterProps {
   buildVersion: string;
   onNavigate: (
     path: string,
-    view: 'dashboard' | 'directory' | 'about' | 'contact' | 'faq' | 'status' | 'privacy' | 'terms',
+    view: 'dashboard' | 'directory' | 'guides' | 'about' | 'contact' | 'faq' | 'status' | 'privacy' | 'terms',
   ) => void;
 }
 
@@ -28,6 +28,12 @@ export function SiteFooter({
           </button>
           <button type="button" onClick={() => onNavigate('/directory', 'directory')} className="hover:text-white">
             All tools
+          </button>
+          <a href="/tools" className="hover:text-white">
+            Tools index
+          </a>
+          <button type="button" onClick={() => onNavigate('/guides', 'guides')} className="hover:text-white">
+            Guides
           </button>
           <button type="button" onClick={() => onNavigate('/about', 'about')} className="hover:text-white">
             About

@@ -45,7 +45,7 @@ export function mapReplaceScope(ui: string): ApiReplaceScope {
 }
 
 export async function serverReplacePdf(
-  file: File,
+  files: File[],
   pairs: ReplacePairWithStrict[],
   options: {
     matchMode: string;
@@ -57,13 +57,16 @@ export async function serverReplacePdf(
     pdfPasswordsJson?: string;
   }
 ) {
+  if (files.length === 0) {
+    throw new Error('Choose at least one PDF file.');
+  }
   const rules = pairs.map((p) => ({ find: p.find.trim(), replace: p.replace }));
   if (rules.some((p) => !p.find)) {
     throw new Error('Find text cannot be empty.');
   }
   const scope = mapReplaceScope(options.replaceScope);
   return postReplaceBatch({
-    files: [file],
+    files,
     pairs: rules,
     matchMode: mapMatchMode(options.matchMode),
     replaceScope: scope,

@@ -24,7 +24,7 @@ const DEFAULT_LIMITS: SiteLimits = {
 };
 
 const DEFAULT_CONFIG: SiteConfig = {
-  supportEmail: import.meta.env.VITE_SUPPORT_EMAIL?.trim() || 'support@mypdfbolt.shop',
+  supportEmail: import.meta.env.VITE_SUPPORT_EMAIL?.trim() || '',
   limits: DEFAULT_LIMITS,
 };
 

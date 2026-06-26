@@ -63,7 +63,7 @@ describe('serverReplacePdf', () => {
 
   it('rejects empty find text', async () => {
     await expect(
-      serverReplacePdf(mockPdfFile(), [{ find: '  ', replace: 'x', strict: false }], {
+      serverReplacePdf([mockPdfFile()], [{ find: '  ', replace: 'x', strict: false }], {
         matchMode: 'Exact',
         replaceScope: 'All matches',
         occurrenceIndex: 1,
@@ -74,7 +74,7 @@ describe('serverReplacePdf', () => {
   });
 
   it('passes nth occurrence only for specific occurrence scope', async () => {
-    await serverReplacePdf(mockPdfFile(), [{ find: 'a', replace: 'b', strict: true }], {
+    await serverReplacePdf([mockPdfFile()], [{ find: 'a', replace: 'b', strict: true }], {
       matchMode: 'Exact',
       replaceScope: 'Specific occurrence',
       occurrenceIndex: 3,

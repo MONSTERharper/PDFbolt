@@ -11,7 +11,13 @@ export function collectPdfFilesForTool(
   extraFiles: File[],
   compareFile2: File | null,
 ): File[] {
-  if ((toolId === 'replace' || toolId === 'compress') && file) {
+  if (toolId === 'replace') {
+    if (extraFiles.length > 0) {
+      return [...extraFiles];
+    }
+    return file ? [file] : [];
+  }
+  if (toolId === 'compress' && file) {
     return [file];
   }
   const kind = getToolUploadKind(toolId);

@@ -20,7 +20,7 @@ class SitePublicControllerTest {
     void siteConfigExposesLimitsAndSupportEmail() throws Exception {
         mockMvc.perform(get("/api/public/site-config"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.supportEmail").isNotEmpty())
+                .andExpect(jsonPath("$.supportEmail").exists())
                 .andExpect(jsonPath("$.limits.maxPages").value(250))
                 .andExpect(jsonPath("$.limits.maxFileSizeLabel").value("25 MB"));
     }

@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 class NeubergCompressBenchmarkTest {
     @Test
     void printNeubergCompressionSizes() throws Exception {
-        benchmarkFile(new File("src/test/resources/neuberg-sarvesh-sample.pdf"));
+        benchmarkFile(new File("src/test/resources/neuberg-sample.pdf"));
         benchmarkFile(new File("/Users/sthapha/Downloads/7338566739.pdf"));
     }
 

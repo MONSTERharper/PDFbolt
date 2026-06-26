@@ -93,14 +93,14 @@ class DeterministicPdfReplacerTest {
 
     @Test
     void preservesItalicStyleWhenTextIsEncodable() throws Exception {
-        File input = PdfTestSupport.createPdfWithFont(tempDir.resolve("italic-input.pdf"), "sarvesh", PDType1Font.HELVETICA_OBLIQUE);
+        File input = PdfTestSupport.createPdfWithFont(tempDir.resolve("italic-input.pdf"), "italicword", PDType1Font.HELVETICA_OBLIQUE);
         File output = tempDir.resolve("italic-output.pdf").toFile();
 
         DeterministicPdfReplacer.Result result = DeterministicPdfReplacer.replace(
                 input,
                 output,
-                "sarvesh",
-                "jungbahadur",
+                "italicword",
+                "replacedword",
                 false,
                 null,
                 DeterministicPdfReplacer.MatchMode.EXACT,
@@ -281,7 +281,7 @@ class DeterministicPdfReplacerTest {
 
     @Test
     void replacesSplitTjAndTjArrayNameOnNeubergStylePdf() throws Exception {
-        File input = new File("src/test/resources/neuberg-sarvesh-sample.pdf");
+        File input = new File("src/test/resources/neuberg-sample.pdf");
         Assumptions.assumeTrue(input.isFile(), "sample PDF missing");
         File output = tempDir.resolve("neuberg-shikha-out.pdf").toFile();
 
@@ -306,7 +306,7 @@ class DeterministicPdfReplacerTest {
 
     @Test
     void keepsPriorSubstituteFontWhenApplyingSequentialReplacements() throws Exception {
-        File input = new File("src/test/resources/neuberg-sarvesh-sample.pdf");
+        File input = new File("src/test/resources/neuberg-sample.pdf");
         Assumptions.assumeTrue(input.isFile(), "sample PDF missing");
         File first = tempDir.resolve("neuberg-first-out.pdf").toFile();
         File second = tempDir.resolve("neuberg-second-out.pdf").toFile();

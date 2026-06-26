@@ -30,8 +30,8 @@ class NeubergApiReplaceTest {
     private MockMvc mockMvc;
 
     @Test
-    void apiReplaceSarveshLikeFrontend() throws Exception {
-        File sample = new File("src/test/resources/neuberg-sarvesh-sample.pdf");
+    void apiReplaceNameLikeFrontend() throws Exception {
+        File sample = new File("src/test/resources/neuberg-sample.pdf");
         if (!sample.isFile()) {
             return;
         }
@@ -63,7 +63,7 @@ class NeubergApiReplaceTest {
 
     @Test
     void apiReplaceMobileLikeFrontend() throws Exception {
-        File sample = new File("src/test/resources/neuberg-sarvesh-sample.pdf");
+        File sample = new File("src/test/resources/neuberg-sample.pdf");
         if (!sample.isFile()) {
             return;
         }
@@ -95,7 +95,7 @@ class NeubergApiReplaceTest {
 
     @Test
     void apiKeepsBothFallbackReplacementsAcrossSequentialRules() throws Exception {
-        File sample = new File("src/test/resources/neuberg-sarvesh-sample.pdf");
+        File sample = new File("src/test/resources/neuberg-sample.pdf");
         if (!sample.isFile()) {
             return;
         }

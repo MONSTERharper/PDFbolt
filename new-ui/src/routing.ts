@@ -8,6 +8,8 @@ export type AppView =
   | 'terms'
   | 'faq'
   | 'status'
+  | 'guides'
+  | 'guide'
   | 'not-found'
   | 'wip';
 
@@ -54,6 +56,8 @@ export function normalizePath(pathname: string): string {
 export interface ParsedRoute {
   view: AppView;
   toolId?: string;
+  /** Guide article slug for the 'guide' view. */
+  slug?: string;
 }
 
 /** Old URLs → new /bolt/… paths (client-side redirect). */
@@ -118,6 +122,13 @@ export function parseRoute(pathname: string, knownToolIds: ReadonlySet<string>):
   if (path === '/directory') {
     return { view: 'directory' };
   }
+  if (path === '/guides') {
+    return { view: 'guides' };
+  }
+  const guideMatch = path.match(/^\/guides\/([a-z0-9-]+)$/);
+  if (guideMatch) {
+    return { view: 'guide', slug: guideMatch[1] };
+  }
 
   const boltMatch = path.match(/^\/bolt\/([a-z0-9-]+)$/);
   if (boltMatch) {
@@ -155,6 +166,10 @@ export function pageTitle(view: AppView, toolCleanName?: string | null): string 
       return 'Help & FAQ — PDFbolt';
     case 'status':
       return 'Service status — PDFbolt';
+    case 'guides':
+      return 'PDF Guides — PDFbolt';
+    case 'guide':
+      return toolCleanName ? `${toolCleanName} — PDFbolt` : 'PDF Guides — PDFbolt';
     case 'not-found':
       return 'Page not found — PDFbolt';
     case 'wip':

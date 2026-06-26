@@ -1143,7 +1143,7 @@ public final class DeterministicPdfReplacer {
 
     /**
      * When a subset font forces a substitute, also collapse partial multi-operator matches (e.g. only
-     * {@code SARVESH} of {@code SARVESH THAPA}) so we do not leave a second {@code TJ} block behind.
+     * {@code JOHN} of {@code JOHN DOE}) so we do not leave a second {@code TJ} block behind.
      */
     private static boolean shouldCollapseSplitOperatorMatchForSubstitute(
             List<TextSegment> affected,

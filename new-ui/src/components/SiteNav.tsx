@@ -12,6 +12,7 @@ export interface SiteNavItem {
 const NAV_ITEMS: SiteNavItem[] = [
   { view: 'dashboard', path: '/', label: 'Suite', clearSearch: true },
   { view: 'directory', path: '/directory', label: 'Directory', clearSearch: true },
+  { view: 'guides', path: '/guides', label: 'Guides' },
   { view: 'about', path: '/about', label: 'About' },
   { view: 'faq', path: '/faq', label: 'FAQ' },
   { view: 'contact', path: '/contact', label: 'Contact' },

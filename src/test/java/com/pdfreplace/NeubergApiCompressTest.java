@@ -45,12 +45,12 @@ class NeubergApiCompressTest {
     }
 
     private void postAndAssertLevel(String requestLevel, String expectedLevelHeader) throws Exception {
-        File sample = new File("src/test/resources/neuberg-sarvesh-sample.pdf");
+        File sample = new File("src/test/resources/neuberg-sample.pdf");
         assumeTrue(sample.isFile(), "neuberg sample PDF missing");
 
         MockMultipartFile file = new MockMultipartFile(
                 "files",
-                "neuberg-sarvesh-sample.pdf",
+                "neuberg-sample.pdf",
                 MediaType.APPLICATION_PDF_VALUE,
                 Files.readAllBytes(sample.toPath())
         );

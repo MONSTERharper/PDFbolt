@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, ChevronRight } from 'lucide-react';
+import { Search, ChevronRight, BookOpen, Clock, ShieldCheck, Zap, Ban, Infinity as InfinityIcon } from 'lucide-react';
 import { BannerAd } from '../components/AdPlacement';
 import { OnboardingBanner, ONBOARDING_QUICK_TOOL_IDS } from '../components/OnboardingBanner';
 import { BoltBrand } from '../components/BoltBrand';
@@ -7,6 +7,7 @@ import { ToolSpotlightGrid } from '../components/ToolSpotlightGrid';
 import { formatBoltVersion } from '../appVersion';
 import { isToolLive } from '../toolStatus';
 import { CATEGORIES, resolveSuiteTool, SUITE_TOOL_COUNT, type SuiteTool } from '../suiteCatalog';
+import { GUIDES } from '../guidesContent';
 
 export function DashboardPage({
   popularToolIds,
@@ -21,6 +22,8 @@ export function DashboardPage({
   onBrowseDirectory,
   onContact,
   onOpenToolFromOnboarding,
+  onOpenGuide,
+  onBrowseGuides,
 }: {
   popularToolIds: string[];
   recentToolIds: string[];
@@ -34,7 +37,10 @@ export function DashboardPage({
   onBrowseDirectory: () => void;
   onContact: () => void;
   onOpenToolFromOnboarding: (toolId: string) => void;
+  onOpenGuide: (slug: string) => void;
+  onBrowseGuides: () => void;
 }) {
+  const featuredGuides = GUIDES.slice(0, 3);
   const spotlightTools = popularToolIds
     .map((id) => resolveSuiteTool(id))
     .filter((tool): tool is SuiteTool => tool != null);
@@ -45,25 +51,41 @@ export function DashboardPage({
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-10 space-y-12">
-      {/* Simplified Header */}
-      <header className="text-center max-w-2xl mx-auto space-y-4">
-        <h1 className="text-5xl font-black tracking-tighter leading-none text-[#141414]">
+      {/* Hero */}
+      <header className="text-center max-w-2xl mx-auto space-y-5">
+        <h1 className="text-5xl md:text-6xl font-black tracking-tighter leading-none text-[#141414]">
           PDF<BoltBrand text="bolt" /> Suite
         </h1>
-        <div className="space-y-2">
-          <h2 className="text-xl font-bold tracking-tight text-[#FF3300]">
-            Simple PDF tools for everyday work.
-          </h2>
-          <p className="text-sm font-sans text-gray-600 leading-relaxed">
-            Merge, convert, compress, and edit PDFs online. Your file is processed on our server for each job and is not kept afterward.
-          </p>
-          <p className="text-xs font-mono text-gray-500 uppercase tracking-widest">
-            Release {formatBoltVersion(displayVersion)}
-            {versionMismatch && serverVersion
-              ? ` (UI build ${formatBoltVersion(buildVersion)})`
-              : ''}
-          </p>
-        </div>
+        <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#FF3300]">
+          Every PDF tool you need. Free, fast, no signup.
+        </h2>
+        <p className="text-sm md:text-base font-sans text-gray-600 leading-relaxed max-w-xl mx-auto">
+          {SUITE_TOOL_COUNT} tools to merge, split, compress, convert, sign, and edit PDFs —
+          right in your browser. No watermarks, no account, no software to install.
+        </p>
+
+        {/* Trust signals */}
+        <ul className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pt-1 text-xs font-mono uppercase tracking-widest text-gray-600">
+          <li className="inline-flex items-center gap-1.5">
+            <ShieldCheck size={14} className="text-[#FF3300]" aria-hidden /> Files deleted after use
+          </li>
+          <li className="inline-flex items-center gap-1.5">
+            <Zap size={14} className="text-[#FF3300]" aria-hidden /> No signup
+          </li>
+          <li className="inline-flex items-center gap-1.5">
+            <Ban size={14} className="text-[#FF3300]" aria-hidden /> No watermarks
+          </li>
+          <li className="inline-flex items-center gap-1.5">
+            <InfinityIcon size={14} className="text-[#FF3300]" aria-hidden /> No file limits
+          </li>
+        </ul>
+
+        <p className="text-xs font-mono text-gray-500 uppercase tracking-widest pt-1">
+          Release {formatBoltVersion(displayVersion)}
+          {versionMismatch && serverVersion
+            ? ` (UI build ${formatBoltVersion(buildVersion)})`
+            : ''}
+        </p>
       </header>
 
       <OnboardingBanner
@@ -195,6 +217,43 @@ export function DashboardPage({
               <ChevronRight size={14} className="transition-transform group-hover:translate-x-1" />
             </button>
           </div>
+
+          {/* Guides teaser — surfaces editorial content and improves internal linking */}
+          <section className="space-y-4 border-t border-[#141414]/10 pt-10">
+            <div className="flex items-center justify-between bg-white/50 p-2 rounded-lg border border-[#141414]/5">
+              <h2 className="flex items-center gap-2 text-xs uppercase font-mono tracking-widest text-[#FF3300] font-bold pl-2">
+                <BookOpen size={14} /> From our PDF guides
+              </h2>
+              <button
+                onClick={onBrowseGuides}
+                className="pr-2 text-xs font-mono text-gray-600 hover:text-[#FF3300] inline-flex items-center gap-1"
+              >
+                All guides <ChevronRight size={12} />
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {featuredGuides.map((guide) => (
+                <button
+                  key={guide.slug}
+                  type="button"
+                  onClick={() => onOpenGuide(guide.slug)}
+                  aria-label={`Read guide: ${guide.title}`}
+                  className="group text-left flex flex-col border border-[#141414]/15 bg-white rounded-lg p-4 transition-all hover:border-[#FF3300] hover:shadow-[4px_4px_0px_#141414]"
+                >
+                  <span className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-gray-500">
+                    <span className="bg-[#FF3300]/10 text-[#FF3300] font-bold px-1.5 py-0.5 rounded">{guide.category}</span>
+                    <span className="inline-flex items-center gap-1">
+                      <Clock size={11} aria-hidden /> {guide.readMinutes} min
+                    </span>
+                  </span>
+                  <span className="mt-2 block font-black tracking-tight leading-tight text-[#141414] group-hover:text-[#FF3300] transition-colors">
+                    {guide.title}
+                  </span>
+                  <span className="mt-1 block text-xs font-sans text-gray-500 line-clamp-2">{guide.description}</span>
+                </button>
+              ))}
+            </div>
+          </section>
         </div>
       )}
     </div>

@@ -56,6 +56,8 @@ public class SeoController {
     private static final List<String> STATIC_PATHS = List.of(
             "/",
             "/directory",
+            "/tools",
+            "/guides",
             "/about",
             "/contact",
             "/faq",
@@ -91,6 +93,9 @@ public class SeoController {
         for (String toolId : TOOL_IDS) {
             String slug = SLUG_OVERRIDES.getOrDefault(toolId, toolId);
             appendUrl(xml, origin + "/bolt/" + slug, today, "weekly");
+        }
+        for (GuideCatalog.Guide guide : GuideCatalog.all()) {
+            appendUrl(xml, origin + "/guides/" + guide.slug(), today, "monthly");
         }
         xml.append("</urlset>\n");
         return xml.toString();

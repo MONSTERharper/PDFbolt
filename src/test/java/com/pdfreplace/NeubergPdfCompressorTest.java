@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * Compression smoke tests on the Neuberg-style sample PDF.
  */
 class NeubergPdfCompressorTest {
-    private static final File NEUBERG_SAMPLE = new File("src/test/resources/neuberg-sarvesh-sample.pdf");
+    private static final File NEUBERG_SAMPLE = new File("src/test/resources/neuberg-sample.pdf");
 
     @TempDir
     Path tempDir;

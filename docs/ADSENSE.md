@@ -11,9 +11,8 @@
 | 5 | `curl https://mypdfbolt.shop/ads.txt` → must show `pub-3054286166063522` |
 | 6 | AdSense → site → **ads.txt** → wait for **Authorised** |
 | 7 | **Privacy policy** at `/privacy` must name Google Analytics & AdSense, cookies, opt-out, retention, COPPA — see live page after deploy |
-| 8 | **Support email** `support@mypdfbolt.shop` must receive mail (GoDaddy forwarding → your Gmail) |
-| 9 | **Google Search Console** — verify `mypdfbolt.shop`, submit `https://mypdfbolt.shop/sitemap.xml` |
-| 10 | Wait for site status past **Getting ready**, then **Request review** |
+| 8 | **Google Search Console** — verify `mypdfbolt.shop`, submit `https://mypdfbolt.shop/sitemap.xml` |
+| 9 | Wait for site status past **Getting ready**, then **Request review** |
 
 ## Server `.env`
 
@@ -39,9 +38,24 @@ If you use nginx, proxy `/ads.txt` to the app — see [deploy/nginx-mypdfbolt.sh
 
 ## Behaviour
 
-- Banner loads config from `GET /api/public/ads-config`.
-- If Google does not fill the slot within ~5s, sponsor mock banners show.
-- Without `ADSENSE_BANNER_SLOT`, only mocks run (no empty AdSense box).
+- Banner/sidebar load config from `GET /api/public/ads-config`.
+- Each slot renders a **real Google AdSense unit** when one fills, otherwise nothing
+  (no house/mock/placeholder ads — those were removed for policy compliance).
+- `ADSENSE_BANNER_SLOT` defaults to `5459265290` (see `application.properties`), so a
+  banner serves even with no `.env` override. `ADSENSE_SIDEBAR_SLOT` is optional and
+  falls back to the banner slot.
+
+## Consent (EEA / UK / Switzerland)
+
+- The page head sets **Google Consent Mode v2** defaults (`new-ui/index.html`): EEA/UK/CH
+  start with ad/analytics storage `denied`; all other regions use Google's defaults.
+- This is **not** a certified CMP by itself. To collect consent (and serve personalized
+  ads) in those regions, enable Google's free consent message:
+  **AdSense → Privacy & messaging → GDPR → Create message → publish.**
+  Google injects its certified CMP via the AdSense loader; it updates the consent signal
+  and works with the Consent Mode defaults already in place.
+- Until consent is granted, AdSense serves **non-personalized** ads in those regions, so
+  ad revenue is not blocked. Not required for approval — needed once serving in the EEA.
 
 ## If AdSense says “Site down” or policy issues
 
@@ -62,17 +76,6 @@ If you use nginx, proxy `/ads.txt` to the app — see [deploy/nginx-mypdfbolt.sh
 4. **Nginx** must proxy the whole site to the app (see `deploy/nginx-mypdfbolt.shop.example`), including `/ads.txt`.
 
 5. After fixes, use AdSense → **Request review**. “Site down” is often from a crawl when the server was stopped or those URLs returned errors.
-
-## Support email (GoDaddy → Gmail)
-
-Google reviewers may email `support@mypdfbolt.shop` from your site and privacy policy. It must deliver to an inbox you read.
-
-1. Log in to **GoDaddy** → **Email & Office** (or **Domain** → **Email forwarding**).
-2. Create or edit forwarding: `support@mypdfbolt.shop` → your personal **Gmail** address.
-3. Send a test from Gmail: `mail support@mypdfbolt.shop` — confirm it arrives (check spam once).
-4. Optional: in Gmail **Settings → Accounts → Send mail as**, add `support@mypdfbolt.shop` so replies come from the public address.
-
-If you use a different registrar, set the same forward there. The app only displays the address; delivery is DNS/hosting.
 
 ## Google Search Console
 
